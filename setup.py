@@ -10,6 +10,7 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "rtr_test_extractor = rectrckr.tools.rtr_test_extractor:main",
+            "rtr_simple_stracker = rectrckr.tools.rtr_simple_tracker:main",
         ]
     },
     install_requires=[
