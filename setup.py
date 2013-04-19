@@ -9,7 +9,7 @@ setuptools.setup(
     packages=["rectrckr"],
     entry_points={
         "console_scripts": [
-            "rtr_init = rectrckr.tools.rtr_init:main",
+            "rtr_test_extractor = rectrckr.tools.rtr_test_extractor:main",
         ]
     },
     install_requires=[

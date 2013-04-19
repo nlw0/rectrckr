@@ -16,8 +16,7 @@ class DataSource:
 
         self.Nimages = len(os.listdir(os.path.join(self.path,
                                                    'frames')))
-        print self.Nimages
-                 
+
     def images(self):
         for self.current_image in xrange(self.Nimages):
             yield self.get_image(self.current_image)
