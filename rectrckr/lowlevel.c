@@ -27,18 +27,7 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
   npy_int j;
   double dd0, dd1, dd2;
 
-  if(direction==0) {
-    dd1 = dev(img + cy * dimx + (cx - 1), 1);
-    dd2 = dev(img + cy * dimx + cx, 1);
-    for(j = cx; j < dimx-2; j++) {
-      dd0 = dd1;
-      dd1 = dd2;
-      dd2 = dev(img + cy * dimx + (j+1), 1);
-      if ((dd1 < -10.0) && (dd1 < dd0) && (dd1 < dd2))
-        break;
-    }
-  }
-  else if(direction == 1) {
+  if(direction == 0) {
     dd1 = dev(img + cy * dimx + (cx + 1), 1);
     dd2 = dev(img + cy * dimx + cx, 1);
     for(j = cx; j > 2; j--) {
@@ -49,18 +38,18 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
         break;     
     }
   }
-  else if(direction == 2) {
-    dd1 = dev(img + (cy - 1) * dimx + cx, dimx);
-    dd2 = dev(img + cy * dimx + cx, dimx);
-    for(j = cy; j < dimy-2; j++) {
+  else if(direction==1) {
+    dd1 = dev(img + cy * dimx + (cx - 1), 1);
+    dd2 = dev(img + cy * dimx + cx, 1);
+    for(j = cx; j < dimx-2; j++) {
       dd0 = dd1;
       dd1 = dd2;
-      dd2 = dev(img + (j+1) * dimx + cx, dimx);
-      if (dd1 < -10.0 && dd1 < dd0 && dd1 < dd2)
+      dd2 = dev(img + cy * dimx + (j+1), 1);
+      if ((dd1 < -10.0) && (dd1 < dd0) && (dd1 < dd2))
         break;
     }
   }
-  else if(direction == 3) {
+  else if(direction == 2) {
     dd1 = dev(img + (cy + 1) * dimx + cx, dimx);
     dd2 = dev(img + cy * dimx + cx, dimx);
     for(j = cy; j > 2; j--) {
@@ -68,6 +57,17 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
       dd1 = dd2;
       dd2 = dev(img + (j-1) * dimx + cx, dimx);
       if (dd1 > 10.0 && dd1 > dd0 && dd1 > dd2)
+        break;
+    }
+  }
+  else if(direction == 3) {
+    dd1 = dev(img + (cy - 1) * dimx + cx, dimx);
+    dd2 = dev(img + cy * dimx + cx, dimx);
+    for(j = cy; j < dimy-2; j++) {
+      dd0 = dd1;
+      dd1 = dd2;
+      dd2 = dev(img + (j+1) * dimx + cx, dimx);
+      if (dd1 < -10.0 && dd1 < dd0 && dd1 < dd2)
         break;
     }
   }
