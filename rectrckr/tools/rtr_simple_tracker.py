@@ -6,6 +6,8 @@ import code
 import rectrckr
 import rectrckr.lowlevel as lowlevel
 
+import matplotlib as mpl
+mpl.use( "agg" )
 from pylab import *
 import code
 
@@ -30,8 +32,8 @@ def main():
     img = ds.get_image(args.img_index)
     ## Extract edgels
     edges = img.extract_edgels(px,py)
-    lx = edges[1] - edges[0]
-    ly = edges[3] - edges[2]
+    lx = (edges[1] - edges[0])/2
+    ly = (edges[3] - edges[2])/2
 
     print px, py, lx, ly
 
@@ -40,31 +42,45 @@ def main():
     kalman.state = array([px,py,lx,ly,0,0,0,0])
 
     kalman.Mobser = array([
-            [1,0,-1,0,0,0,0,0],
-            [1,0,1,0,0,0,0,0],
-            [0,1,0,-1,0,0,0,0],
-            [0,1,0,1,0,0,0,0],
+            [1,0,-1, 0,0,0,0,0],
+            [1,0, 1, 0,0,0,0,0],
+            [0,1, 0,-1,0,0,0,0],
+            [0,1, 0, 1,0,0,0,0],
             ])
 
     new_data = array([
             50,150,100,200.0
             ])
 
-    dt = 10.0
+    dt = 1.0
 
-    xout = zeros((773,8))
+
+    ##
+    import cProfile, pstats, io
+    pr = cProfile.Profile()
+    pr.enable()
+    ##
+
+    fig = figure(1)
+    subplot(1,1,1)
+    fig.tight_layout()
+
+    log_zh = zeros((773,4))
+    log_z = zeros((773,4))
     for k in range(1,772,1):
+    #for k in range(1,126,1):
 
-        img = ds.get_image(k)
-        px,py = kalman.state[:2]
-        new_data = img.extract_edgels(px,py)
-        
-
-        print 70*'-'
+        print '--['+'%03d'%k+']'+70*'-'
         kalman.predict_state(dt)
         print 'pred st: ', kalman.state
         kalman.predict_observations()
         print 'pred obs:', kalman.z_hat
+
+        img = ds.get_image(k)
+        px,py = kalman.state[:2]
+        zhat = copy(kalman.z_hat)
+        new_data = img.extract_edgels(px,py)
+
         print 'measured:', new_data
         merr = norm(kalman.z_hat - new_data)
         print 'measurement error:', merr
@@ -73,8 +89,8 @@ def main():
         print 'updt st:', kalman.state
 
         # ## Log predicted state and outputs
-        xout[k/5] = kalman.state
-
+        log_zh[k] = zhat
+        log_z[k] = new_data
 
 
     ##
@@ -83,14 +99,28 @@ def main():
         imshow(copy(img.img), cmap=cm.gray)
         plot(new_data[:2], [py,py], 'k--')
         plot([px,px], new_data[2:4], 'k--')
+
+        plot(zhat[:2], [py,py], 'bo')
+        plot([px,px], zhat[2:4], 'bo')
+        plot(px,py, 'bs')
+
         plot(new_data[:2], [py,py], 'ro')
         plot([px,px], new_data[2:4], 'ro')
-        plot(px,py, 'bo')
+        plot(px,py, 'rs')
 
         axis([0,img.img.shape[1],img.img.shape[0],0])
-        savefig('aaa-{:04d}.png'.format(k))
+
+        savefig(ds.get_output_path(k))
+
+    ##
+    pr.dump_stats('mycoutstats.profi')
+    ##
+    savetxt('zh.dat', log_zh)
+    savetxt('z.dat', log_z)
+
 
     code.interact(local=locals())
+
 
 
 if __name__ == '__main__':

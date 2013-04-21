@@ -19,17 +19,18 @@ class DataSource:
         self.Nimages = len(os.listdir(os.path.join(self.path,
                                                    'frames')))
 
-    def images(self):
-        for self.current_image_n in xrange(self.Nimages):
-            yield self.get_image(self.current_image_n)
-    
     def get_image(self, n):
         img_path = os.path.join(self.path,
                                 'frames',
                                 self.image_name_format.format(n))
-        self.current_image = numpy.array(
+        img = numpy.array(
             Image.open(img_path).convert('L'), dtype=numpy.float64)
-        return ImageAnalyzer(self.current_image)
+        return ImageAnalyzer(img)
+
+    def get_output_path(self, n):
+        return os.path.join(self.path,
+                            'output',
+                            self.image_name_format.format(n))
 
 
 class ImageAnalyzer:

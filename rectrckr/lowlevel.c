@@ -41,7 +41,7 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
   else if(direction==1) {
     dd1 = dev(img + cy * dimx + (cx - 1), 1);
     dd2 = dev(img + cy * dimx + cx, 1);
-    for(j = cx; j < dimx-2; j++) {
+    for(j = cx; j < dimx - 3; j++) {
       dd0 = dd1;
       dd1 = dd2;
       dd2 = dev(img + cy * dimx + (j+1), 1);
@@ -63,7 +63,7 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
   else if(direction == 3) {
     dd1 = dev(img + (cy - 1) * dimx + cx, dimx);
     dd2 = dev(img + cy * dimx + cx, dimx);
-    for(j = cy; j < dimy-2; j++) {
+    for(j = cy; j < dimy - 3; j++) {
       dd0 = dd1;
       dd1 = dd2;
       dd2 = dev(img + (j+1) * dimx + cx, dimx);
