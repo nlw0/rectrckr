@@ -21,7 +21,8 @@ def main():
     ## as the camera parameters
     ds = rectrckr.DataSource(args.input)
 
-    img = ds.get_image(args.img_index)
+    imgana = ds.get_image(args.img_index)
+    img = imgana.img
 
     px, py = args.px, args.py
 
@@ -30,16 +31,20 @@ def main():
     lh = img[py,:]
     lv = img[:,px]
     lhd = array([
-            lowlevel.linear_derivative(img, x, py, 0) for x in mgrid[2:img.shape[1]-2]])
+            lowlevel.gradient(img, x, py) for x in mgrid[2:img.shape[1]-2]])
+    lhd = lhd[:,0]**2 + lhd[:,1]**2
     lvd = array([
-            lowlevel.linear_derivative(img, px, y, 1) for y in mgrid[2:img.shape[0]-2]])
+            lowlevel.gradient(img, px, y) for y in mgrid[2:img.shape[0]-2]])
+    lvd = lvd[:,0]**2 + lvd[:,1]**2
 
     ## Extract edgels
-    edges = zeros((4,2))
-    edges[0] = (lowlevel.find_edges(img, px, py, 0), py)
-    edges[1] = (lowlevel.find_edges(img, px, py, 1), py)
-    edges[2] = (px, lowlevel.find_edges(img, px, py, 2))
-    edges[3] = (px, lowlevel.find_edges(img, px, py, 3))
+    edges = imgana.extract_edgels(px,py)
+
+    medges = imgana.extract_moar_edgels(px,py)
+
+    dirs = array([imgana.estimate_direction_at_point(int(medges[k,0]),
+                                                     int(medges[k,1]))
+                  for k in range(12)])
 
     ##
     ## Plot image and the extracted edges
@@ -47,8 +52,19 @@ def main():
     figure(1)
     imshow(img, cmap=cm.gray)
     plot(px,py, 'bo')
-    plot(edges[:,0], edges[:,1], 'ro')
+    plot(medges[:,0], medges[:,1], 'ro')
 
+    vv = array([-1.0,1.0])
+    cc = array([.0,1.0])
+    for k in range(12):
+        
+        plot(medges[k,0]+dirs[k,0]*cc,
+             medges[k,1]+dirs[k,1]*cc,
+             'b-')
+
+        plot(medges[k,0]+dirs[k,1]*vv,
+             medges[k,1]-dirs[k,0]*vv,
+             'r-')
     ## Plot image levels and derivatives
     figure(2)
     subplot(2,1,1)

@@ -46,3 +46,27 @@ class ImageAnalyzer:
              lowlevel.find_edges(self.img, px, py, 3)
              )
             )
+
+    def extract_moar_edgels(self, fx, fy, gs=16):
+        px, py = int(round(fx)), int(round(fy))
+        return numpy.array(
+            (
+                (lowlevel.find_edges(self.img, px, py, 0),py),
+                (lowlevel.find_edges(self.img, px, py, 1),py),
+                (px, lowlevel.find_edges(self.img, px, py, 2)),
+                (px, lowlevel.find_edges(self.img, px, py, 3)),
+                (lowlevel.find_edges(self.img, px, py-gs, 0),py-gs),
+                (lowlevel.find_edges(self.img, px, py-gs, 1),py-gs),
+                (px-gs, lowlevel.find_edges(self.img, px-gs, py, 2)),
+                (px-gs, lowlevel.find_edges(self.img, px-gs, py, 3)),
+                (lowlevel.find_edges(self.img, px, py+gs, 0),py+gs),
+                (lowlevel.find_edges(self.img, px, py+gs, 1),py+gs),
+                (px+gs, lowlevel.find_edges(self.img, px+gs, py, 2)),
+                (px+gs, lowlevel.find_edges(self.img, px+gs, py, 3)),
+                )
+            )
+
+    def estimate_direction_at_point(self, px, py):
+        return numpy.array(lowlevel.gradient(self.img, px, py))
+        
+        
