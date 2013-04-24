@@ -40,7 +40,7 @@ def main():
     ## Extract edgels
     edges = imgana.extract_edgels(px,py)
 
-    medges = imgana.extract_moar_edgels(px,py)
+    medges = imgana.extract_moar_edgels(px,py,gs=32)
 
     dirs = array([imgana.estimate_direction_at_point(int(medges[k,0]),
                                                      int(medges[k,1]))
@@ -54,8 +54,8 @@ def main():
     plot(px,py, 'bo')
     plot(medges[:,0], medges[:,1], 'ro')
 
-    vv = array([-1.0,1.0])
-    cc = array([.0,1.0])
+    vv = array([-1.0,1.0])*0.7
+    cc = array([.0,1.0])*0.7
     for k in range(12):
         
         plot(medges[k,0]+dirs[k,0]*cc,
@@ -65,6 +65,8 @@ def main():
         plot(medges[k,0]+dirs[k,1]*vv,
              medges[k,1]-dirs[k,0]*vv,
              'r-')
+    axis([0,img.shape[1],img.shape[0],0])
+
     ## Plot image levels and derivatives
     figure(2)
     subplot(2,1,1)
@@ -75,5 +77,4 @@ def main():
     plot(lv)
     twinx()
     plot(mgrid[2:img.shape[0]-2], lvd, 'r-+')
-
     code.interact(local=locals())

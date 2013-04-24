@@ -17,7 +17,8 @@ def main():
 
     parser = argparse.ArgumentParser(description='Initial rectangle localization.')
     parser.add_argument('input', type=argparse.FileType('r'))
-    parser.add_argument('img_index', type=int)
+    parser.add_argument('img_a', type=int)
+    parser.add_argument('img_b', type=int)
     parser.add_argument('px', type=int)
     parser.add_argument('py', type=int)
     args = parser.parse_args()
@@ -29,7 +30,7 @@ def main():
     ## information such as the camera parameters
     ds = rectrckr.DataSource(args.input)
 
-    img = ds.get_image(args.img_index)
+    img = ds.get_image(args.img_a)
     ## Extract edgels
     edges = img.extract_edgels(px,py)
     lx = (edges[1] - edges[0])/2
@@ -54,9 +55,8 @@ def main():
 
     dt = 1.0
 
-
     ##
-    import cProfile, pstats, io
+    import cProfile
     pr = cProfile.Profile()
     pr.enable()
     ##
@@ -65,18 +65,17 @@ def main():
     subplot(1,1,1)
     fig.tight_layout()
 
-    log_zh = zeros((773,4))
-    log_z = zeros((773,4))
-    for k in range(1,772,1):
-    #for k in range(1,126,1):
+    log_zh = zeros((args.img_b-args.img_a,4))
+    log_z = zeros((args.img_b-args.img_a,4))
+    for k in range(args.img_b-args.img_a):
 
-        print '--['+'%03d'%k+']'+70*'-'
+        print '--['+'%03d'%(k + args.img_a)+']' + 70 * '-'
         kalman.predict_state(dt)
         print 'pred st: ', kalman.state
         kalman.predict_observations()
         print 'pred obs:', kalman.z_hat
 
-        img = ds.get_image(k)
+        img = ds.get_image(k + args.img_a)
         px,py = kalman.state[:2]
         zhat = copy(kalman.z_hat)
         new_data = img.extract_edgels(px,py)

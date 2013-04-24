@@ -6,14 +6,16 @@
 double dev(double * p, npy_int step) {
   return (-0.212 * p[-2*step] - 0.5 * p[-1*step] + 0.5 * p[1*step] + 0.212 * p[2*step]);
 }
+void gradient(double*, double*, double*, npy_int, npy_int, npy_int);
 
-static PyObject * find_edges(PyObject *self, PyObject *args) {
+/* Sweeps the image on the given direction, until an edge is detected. */
+static PyObject * find_edge(PyObject *self, PyObject *args) {
   PyObject *input_img;
   PyArrayObject *img_obj;
-  npy_int cx, cy;
+  npy_int px, py;
   npy_int direction;
 
-  if (!PyArg_ParseTuple(args, "Oiii", &input_img, &cx, &cy, &direction))
+  if (!PyArg_ParseTuple(args, "Oiii", &input_img, &px, &py, &direction))
     return NULL;
 
   img_obj = (PyArrayObject *)
@@ -24,108 +26,45 @@ static PyObject * find_edges(PyObject *self, PyObject *args) {
   npy_int dimx = img_obj->dimensions[1];
   double *img = (double*)img_obj->data;
 
-  npy_int j;
-  double dd0, dd1, dd2;
-
-  if(direction == 0) {
-    dd1 = dev(img + cy * dimx + (cx + 1), 1);
-    dd2 = dev(img + cy * dimx + cx, 1);
-    for(j = cx; j > 2; j--) {
-      dd0 = dd1;
-      dd1 = dd2;
-      dd2 = dev(img + cy * dimx + (j-1), 1);
-      if (dd1 > 10.0 && dd1 > dd0 && dd1 > dd2)
-        break;     
-    }
-  }
-  else if(direction==1) {
-    dd1 = dev(img + cy * dimx + (cx - 1), 1);
-    dd2 = dev(img + cy * dimx + cx, 1);
-    for(j = cx; j < dimx - 3; j++) {
-      dd0 = dd1;
-      dd1 = dd2;
-      dd2 = dev(img + cy * dimx + (j+1), 1);
-      if ((dd1 < -10.0) && (dd1 < dd0) && (dd1 < dd2))
-        break;
-    }
-  }
-  else if(direction == 2) {
-    dd1 = dev(img + (cy + 1) * dimx + cx, dimx);
-    dd2 = dev(img + cy * dimx + cx, dimx);
-    for(j = cy; j > 2; j--) {
-      dd0 = dd1;
-      dd1 = dd2;
-      dd2 = dev(img + (j-1) * dimx + cx, dimx);
-      if (dd1 > 10.0 && dd1 > dd0 && dd1 > dd2)
-        break;
-    }
-  }
-  else if(direction == 3) {
-    dd1 = dev(img + (cy - 1) * dimx + cx, dimx);
-    dd2 = dev(img + cy * dimx + cx, dimx);
-    for(j = cy; j < dimy - 3; j++) {
-      dd0 = dd1;
-      dd1 = dd2;
-      dd2 = dev(img + (j+1) * dimx + cx, dimx);
-      if (dd1 < -10.0 && dd1 < dd0 && dd1 < dd2)
-        break;
-    }
-  }
-  
-  Py_DECREF(img_obj);
-  return Py_BuildValue("i", j);
-}
-
-
-static PyObject * find_edges_gradient(PyObject *self, PyObject *args) {
-  PyObject *input_img;
-  PyArrayObject *img_obj;
-  npy_int cx, cy;
-  npy_int direction;
-
-  if (!PyArg_ParseTuple(args, "Oiii", &input_img, &cx, &cy, &direction))
-    return NULL;
-
-  img_obj = (PyArrayObject *)
-    PyArray_ContiguousFromObject(input_img, PyArray_DOUBLE, 2, 2);
-  if (img_obj == NULL) return NULL;
-
-  npy_int dimy = img_obj->dimensions[0];
-  npy_int dimx = img_obj->dimensions[1];
-  double *img = (double*)img_obj->data;
-
-  npy_int j;
+  npy_int j=0;
   double dx0, dx1, dx2;
   double dy0, dy1, dy2;
   double dd0, dd1, dd2;
 
+  double edge_threshold = 10.0;
+
   if(direction == 0) {
-    gradient(&dx1, &dy1, img, dimx, cx + 1, cy);
-    dd1=dx1*dx1+dy1*dy1;
-    gradient(&dx2, &dy2, img, dimx, cx, cy);
-    dd2=dx2*dx2+dy2*dy2;
-    for(j = cx; j > 2; j--) {
+    gradient(&dx1, &dy1, img, dimx, px + 1, py);
+    dd1 = dx1 * dx1 + dy1 * dy1;
+    gradient(&dx2, &dy2, img, dimx, px, py);
+    dd2 = dx2 * dx2 + dy2 * dy2;
+    for(j = px; j > 2; j--) {
       dx0 = dx1; dy0 = dy1; dd0 = dd1;
       dx1 = dx2; dy1 = dy2; dd1 = dd2;
-      gradient(&dx2, &dy2, img, dimx, j-1, cy);
-      dd2=dx2*dx2+dy2*dy2;
-      if (dd1 > (10*10.0) &&
+
+      gradient(&dx2, &dy2, img, dimx, j-1, py);
+      dd2 = dx2 * dx2 + dy2 * dy2;
+
+      if (dd1 > (edge_threshold) &&
           dd1 > dd0 &&
           dd1 > dd2)
         break;     
     }
   }
+
   if(direction == 1) {
-    gradient(&dx1, &dy1, img, dimx, cx - 1, cy);
+    gradient(&dx1, &dy1, img, dimx, px - 1, py);
     dd1=dx1*dx1+dy1*dy1;
-    gradient(&dx2, &dy2, img, dimx, cx, cy);
+    gradient(&dx2, &dy2, img, dimx, px, py);
     dd2=dx2*dx2+dy2*dy2;
-    for(j = cx; j < dimx - 3; j++) {
+    for(j = px; j < dimx - 3; j++) {
       dx0 = dx1; dy0 = dy1; dd0 = dd1;
       dx1 = dx2; dy1 = dy2; dd1 = dd2;
-      gradient(&dx2, &dy2, img, dimx, j+1, cy);
+
+      gradient(&dx2, &dy2, img, dimx, j+1, py);
       dd2=dx2*dx2+dy2*dy2;
-      if (dd1 > (10*10.0) &&
+
+      if (dd1 > (edge_threshold) &&
           dd1 > dd0 &&
           dd1 > dd2)
         break;     
@@ -133,32 +72,33 @@ static PyObject * find_edges_gradient(PyObject *self, PyObject *args) {
   }
 
   if(direction == 2) {
-    gradient(&dx1, &dy1, img, dimx, cx, cy + 1);
+    gradient(&dx1, &dy1, img, dimx, px, py + 1);
     dd1=dx1*dx1+dy1*dy1;
-    gradient(&dx2, &dy2, img, dimx, cx, cy);
+    gradient(&dx2, &dy2, img, dimx, px, py);
     dd2=dx2*dx2+dy2*dy2;
-    for(j = cy; j > 2; j--) {
+    for(j = py; j > 2; j--) {
       dx0 = dx1; dy0 = dy1; dd0 = dd1;
       dx1 = dx2; dy1 = dy2; dd1 = dd2;
-      gradient(&dx2, &dy2, img, dimx, cx, j-1);
+      gradient(&dx2, &dy2, img, dimx, px, j-1);
       dd2=dx2*dx2+dy2*dy2;
-      if (dd1 > (10*10.0) &&
+      if (dd1 > (edge_threshold) &&
           dd1 > dd0 &&
           dd1 > dd2)
         break;     
     }
   }
+
   if(direction == 3) {
-    gradient(&dx1, &dy1, img, dimx, cx, cy - 1);
+    gradient(&dx1, &dy1, img, dimx, px, py - 1);
     dd1=dx1*dx1+dy1*dy1;
-    gradient(&dx2, &dy2, img, dimx, cx, cy);
+    gradient(&dx2, &dy2, img, dimx, px, py);
     dd2=dx2*dx2+dy2*dy2;
-    for(j = cy; j < dimy - 3; j++) {
+    for(j = py; j < dimy - 3; j++) {
       dx0 = dx1; dy0 = dy1; dd0 = dd1;
       dx1 = dx2; dy1 = dy2; dd1 = dd2;
-      gradient(&dx2, &dy2, img, dimx, cx, j+1);
+      gradient(&dx2, &dy2, img, dimx, px, j+1);
       dd2=dx2*dx2+dy2*dy2;
-      if (dd1 > (10*10.0) &&
+      if (dd1 > (edge_threshold) &&
           dd1 > dd0 &&
           dd1 > dd2)
         break;     
@@ -173,10 +113,10 @@ static PyObject * find_edges_gradient(PyObject *self, PyObject *args) {
 static PyObject * linear_derivative(PyObject *self, PyObject *args) {
   PyObject *input_img;
   PyArrayObject *img_obj;
-  npy_int cx, cy;
+  npy_int px, py;
   npy_int direction;
 
-  if (!PyArg_ParseTuple(args, "Oiii", &input_img, &cx, &cy, &direction))
+  if (!PyArg_ParseTuple(args, "Oiii", &input_img, &px, &py, &direction))
     return NULL;
 
   img_obj = (PyArrayObject *)
@@ -187,8 +127,8 @@ static PyObject * linear_derivative(PyObject *self, PyObject *args) {
   npy_int dimy = img_obj->dimensions[0];
   double *img = (double*)img_obj->data;
 
-  if ((cx < 2) || (cx > dimx-2) ||
-      (cy < 2) || (cy > dimy-2))
+  if ((px < 2) || (px > dimx-2) ||
+      (py < 2) || (py > dimy-2))
     {
       Py_DECREF(img_obj);
       Py_RETURN_NONE;
@@ -197,15 +137,46 @@ static PyObject * linear_derivative(PyObject *self, PyObject *args) {
   double dd;
 
   if (direction==0) {
-    dd = dev(img + cy * dimx + cx, 1);
+    dd = dev(img + py * dimx + px, 1);
   } else {
-    dd = dev(img + cy * dimx + cx, dimx);
+    dd = dev(img + py * dimx + px, dimx);
   }
   
   Py_DECREF(img_obj);
   return Py_BuildValue("d", dd);
 }
 
+
+static PyObject * gradient_wrapper(PyObject *self, PyObject *args) {
+  PyObject *input_img;
+  PyArrayObject *img_obj;
+  npy_int px, py;
+
+  if (!PyArg_ParseTuple(args, "Oii", &input_img, &px, &py))
+    return NULL;
+
+  img_obj = (PyArrayObject *)
+    PyArray_ContiguousFromObject(input_img, PyArray_DOUBLE, 2, 2);
+  if (img_obj == NULL) return NULL;
+
+  npy_int dimx = img_obj->dimensions[1];
+  npy_int dimy = img_obj->dimensions[0];
+  double *img = (double*)img_obj->data;
+
+  if ((px < 2) || (px > dimx-2) ||
+      (py < 2) || (py > dimy-2))
+    {
+      Py_DECREF(img_obj);
+      Py_RETURN_NONE;
+    }
+
+  double dx = 0, dy = 0;
+  
+  gradient(&dx, &dy, img, dimx, px, py);
+
+  Py_DECREF(img_obj);
+  return Py_BuildValue("dd", dx, dy);
+}
 
 double SHIGERU_FILTER[] = {
   -0.003776, -0.010199, 0., 0.010199, 0.003776,
@@ -215,64 +186,23 @@ double SHIGERU_FILTER[] = {
   -0.003776, -0.010199, 0., 0.010199, 0.003776
 };
 
-/* Scaled and rounded version of the Shigeru filter. Result should be divided
-   by 256 after multiplication. */
-npy_int INT_SHIGERU_FILTER[] = {
-  -1, -2, 0, 2, 1,
-  -7, -18, 0, 18, 7,
-  -12, -32, 0, 32, 12,
-  -7, -18, 0, 18, 7,
-  -1, -2, 0, 2, 1
-};
-
-static PyObject * gradient_wrapper(PyObject *self, PyObject *args) {
-  PyObject *input_img;
-  PyArrayObject *img_obj;
-  npy_int cx, cy;
-
-  if (!PyArg_ParseTuple(args, "Oii", &input_img, &cx, &cy))
-    return NULL;
-
-  img_obj = (PyArrayObject *)
-    PyArray_ContiguousFromObject(input_img, PyArray_DOUBLE, 2, 2);
-  if (img_obj == NULL) return NULL;
-
-  npy_int dimx = img_obj->dimensions[1];
-  npy_int dimy = img_obj->dimensions[0];
-  double *img = (double*)img_obj->data;
-
-  if ((cx < 2) || (cx > dimx-2) ||
-      (cy < 2) || (cy > dimy-2))
-    {
-      Py_DECREF(img_obj);
-      Py_RETURN_NONE;
-    }
-
-  double dx = 0, dy = 0;
-  
-  gradient(&dx, &dy, img, dimx, cx, cy);
-
-  Py_DECREF(img_obj);
-  return Py_BuildValue("dd", dx, dy);
-}
-
-void gradient(double* dx, double* dy, double* img, npy_int dimx, npy_int cx, npy_int cy) {
+void gradient(double* dx, double* dy, double* img, npy_int dimx, npy_int px, npy_int py) {
   npy_int j, k;
     
+  *dx = 0;
+  *dy = 0;
   for (j = -2; j < 3; j++) {
     for (k = -2; k < 3; k++) {
-      (*dx) += img[(cy+j) * dimx + (cx+k)] * SHIGERU_FILTER[(2+j) * 5 + (2+k)];
-      (*dy) += img[(cy+j) * dimx + (cx+k)] * SHIGERU_FILTER[(2+k) * 5 + (2+j)];
+      (*dx) += img[(py+j) * dimx + (px+k)] * SHIGERU_FILTER[(2+j) * 5 + (2+k)];
+      (*dy) += img[(py+j) * dimx + (px+k)] * SHIGERU_FILTER[(2+k) * 5 + (2+j)];
     }
   }  
 }
 
 static PyMethodDef LowLevelMethods[] =
   {
-    {"find_edges", find_edges, METH_VARARGS,
-     "Find edges on line sweeps.\n"},
-    {"find_edges_gradient", find_edges_gradient, METH_VARARGS,
-     "Find edges on line sweeps, calculating the image gradient at each point.\n"},
+    {"find_edge", find_edge, METH_VARARGS,
+     "Sweep an image line on the given direction, until the first edge is detected.\n"},
     {"linear_derivative", linear_derivative, METH_VARARGS,
      "Calculate the derivative on a line or column.\n"},
     {"gradient", gradient_wrapper, METH_VARARGS,
