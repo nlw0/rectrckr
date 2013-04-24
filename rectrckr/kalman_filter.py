@@ -80,3 +80,5 @@ class KalmanFilter:
         ## Incorporate new observations into state estimation.
         self.state = self.state + dot(self.K, residue)
         self.Cstate = dot(identity(8) - dot(self.K, self.Mobser),self.Cstate)
+
+

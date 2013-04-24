@@ -31,7 +31,7 @@ static PyObject * find_edge(PyObject *self, PyObject *args) {
   double dy0, dy1, dy2;
   double dd0, dd1, dd2;
 
-  double edge_threshold = 10.0;
+  double edge_threshold = 100.0;
 
   if(direction == 0) {
     gradient(&dx1, &dy1, img, dimx, px + 1, py);

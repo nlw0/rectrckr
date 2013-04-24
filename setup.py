@@ -12,6 +12,7 @@ setuptools.setup(
             "rtr_test_extractor = rectrckr.tools.rtr_test_extractor:main",
             "rtr_test_edgel_extractor = rectrckr.tools.rtr_test_edgel_extractor:main",
             "rtr_simple_stracker = rectrckr.tools.rtr_simple_tracker:main",
+            "rtr_edgel_tracker = rectrckr.tools.rtr_edgel_tracker:main",
         ]
     },
     install_requires=[
