@@ -71,6 +71,7 @@ def main():
 
     log_zh = zeros((args.img_b-args.img_a,4))
     log_z = zeros((args.img_b-args.img_a,4))
+    log_edgels = zeros(((args.img_b-args.img_a)*12,4))
     for k in range(args.img_b-args.img_a):
 
         print '--['+'%03d'%(k + args.img_a)+']' + 70 * '-'
@@ -83,11 +84,14 @@ def main():
         img = imgana.img
 
         px,py = kalman.state[:2]
+        lx,ly = kalman.state[2:4]
         zhat = copy(kalman.z_hat)
-        new_data = imgana.extract_edgels(px,py)
+        new_edgels = imgana.extract_moar_edgels(px,py, gs=int(min(lx,ly)/3))
+        new_data = array([new_edgels[0,0], new_edgels[1,0], 
+                          new_edgels[2,1], new_edgels[3,1]])
 
         print 'measured:', new_data
-        merr = norm(kalman.z_hat - new_data)
+        merr = norm(kalman.z_hat - new_data[:4])
         print 'measurement error:', merr
 
         kalman.update_from_observations(new_data)
@@ -97,20 +101,13 @@ def main():
         log_zh[k] = zhat
         log_z[k] = new_data
 
-        ## Extract edgels
-        edges = array([
-                [new_data[0],py],
-                [new_data[1],py],
-                [px,new_data[2]],
-                [px,new_data[3]],
-                ])
-
-        print edges
-        dirs = array([imgana.estimate_direction_at_point(int(round(edges[ed,0])),
-                                                         int(round(edges[ed,1])))
-                      for ed in range(4)])
+        dirs = array([imgana.estimate_direction_at_point(int(round(new_edgels[ed,0])),
+                                                         int(round(new_edgels[ed,1])))
+                      for ed in range(12)])
         print dirs
         dirs = array([dd/norm(dd) for dd in dirs])
+
+        log_edgels[k*12:(k+1)*12] = c_[new_edgels, dirs]
 
         ##
         ## Plot image and the extracted edges
@@ -123,12 +120,12 @@ def main():
         plot([px,px], zhat[2:4], 'bx')
         plot(px,py, 'bs')
 
-        for ed in range(4):
-            plot(edges[ed,0]+dirs[ed,0]*cc,
-                 edges[ed,1]+dirs[ed,1]*cc,
+        for ed in range(12):
+            plot(new_edgels[ed,0]+dirs[ed,0]*cc,
+                 new_edgels[ed,1]+dirs[ed,1]*cc,
                  'b-', lw=2)
-            plot(edges[ed,0]+dirs[ed,1]*vv,
-                 edges[ed,1]-dirs[ed,0]*vv,
+            plot(new_edgels[ed,0]+dirs[ed,1]*vv,
+                 new_edgels[ed,1]-dirs[ed,0]*vv,
                  'r-', lw=2)
 
         # plot(new_data[:2], [py,py], 'ro')
@@ -144,7 +141,7 @@ def main():
     ##
     savetxt('zh.dat', log_zh)
     savetxt('z.dat', log_z)
-
+    savetxt('edgels.dat', log_edgels)
 
     code.interact(local=locals())
 
