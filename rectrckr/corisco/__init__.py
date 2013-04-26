@@ -41,10 +41,12 @@ class Corisco():
         self.sqp_funcs = (val_c, grad_c, hess_c, val_f, grad_f, hess_f)
         
         ## Error function parameters (Tukey bisquare (3) with scale=0.15)
-        #self.fp = array([3,1,0.1])
-        #self.fp = array([3,0.25,0])
-        self.fp = array([2.0,1,0.1])
+        self.fp = array([3,1,0.15])
+        #self.fp = array([3,1,1.0])
+        #self.fp = array([2.0,1,0.1])
         #self.fp = array([0.0,1])
+        #self.fp = array([1.0,1])
+        #self.fp = array([4.0,1,.15])
         ## Intrinsic parameters. pinhole mode (0)
         self.i_param = array([0.0, focal_distance, p_point[0], p_point[1]])
 
@@ -53,13 +55,22 @@ class Corisco():
 
         filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-3,
                                             self.sqp_funcs,
-                                            args_f,
-                                            delta_tol=0.00001)
+                                            args_f)
 
         xo, err, sqp_iters,Llam,Lrho = filterSQPout
         self.qopt = Quat(xo)
         return self.qopt
     
+
+    def target_function(self, x, fp=None):
+        if fp is None:
+            fp = self.fp
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, fp)
+        return corisco_aux.angle_error(x, *args_f) 
+
+    def gradient_function(self, x):
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.fp)
+        return corisco_aux.angle_error_gradient(x, *args_f) 
 
     def plot_edgels(self, ax):
         scale = 20.0

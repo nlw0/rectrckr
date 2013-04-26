@@ -15,6 +15,7 @@ setuptools.setup(
             "rtr_simple_stracker = rectrckr.tools.rtr_simple_tracker:main",
             "rtr_edgel_tracker = rectrckr.tools.rtr_edgel_tracker:main",
             "rtr_analyze_edgel_data = rectrckr.tools.rtr_analyze_edgel_data:main",
+            "rtr_simulate_edgels = rectrckr.tools.rtr_simulate_edgels:main",
         ]
     },
     install_requires=[
