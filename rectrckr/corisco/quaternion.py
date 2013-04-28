@@ -22,7 +22,7 @@ def random_quaternion(angle = 1.0):
     Q = Quat(np.random.rand(4))
     ## Get a new trial until we are satisfied with the norm (inside an
     ## spherical shell).
-    while Q.norm() > 1.0 or Q.norm() < 0.1:
+    while Q.norm() > 1.0 or Q.norm() < 0.125:
         Q = Quat(np.random.rand(4))
     nQ = angle * Q.q[1:]
     return Quat(nQ).normalize()
@@ -119,7 +119,6 @@ class Quat:
             r[ii[1]] = np.sign(self.q[ii[1]])
         else:
             r = np.sign(self.q) 
-        print r
         r=Quat(r)
         r.normalize()
         return r.inverse() * self

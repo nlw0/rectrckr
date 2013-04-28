@@ -1,6 +1,6 @@
 import filter_sqp as filter_sqp
 import corisco_aux as corisco_aux
-from quaternion import Quat
+from quaternion import Quat, random_quaternion
 
 from pylab import *
 
@@ -89,7 +89,7 @@ class Corisco():
         xo, err, sqp_iters,Llam,Lrho = filterSQPout
         return Quat(xo)
 
-    def random_search(self, initial_trials):
+    def ransac_search(self, initial_trials):
         ## Estimate solution using RANSAC
         bestv = np.Inf ## Smallest value found
         args_f = (self.edgels, self.i_param, self.loss)
@@ -132,6 +132,20 @@ class Corisco():
                 bpk_c = pk_c
                 qopt = q2
         return qopt, bpk_a, bpk_b, bpk_c
+
+    def silly_random_search(self, initial_trials):
+        ## Estimate solution using RANSAC
+        bestv = np.Inf ## Smallest value found
+        args_f = (self.edgels, self.i_param, self.loss)
+        for k in range(initial_trials):
+            qtest = random_quaternion().canonical()
+            newv = corisco_aux.angle_error(qtest.q, *args_f)
+
+            ## If the value is the best yet, store solution.
+            if newv <= bestv:
+                bestv = newv
+                qopt = qtest
+        return qopt
 
     def target_function_value(self, x, loss=None):
         if loss is None:
