@@ -7,6 +7,7 @@ import rectrckr
 import rectrckr.lowlevel as lowlevel
 
 from pylab import *
+import scipy.misc
 
 from rectrckr.kalman_filter import KalmanFilter
 
@@ -70,7 +71,6 @@ def main():
     ori_correct = Quat(cos(answer), sin(answer), 0.0, 0.0)
     edgels = cc.project(ori_correct)
 
-
     co = corisco.Corisco(edgels)
     
 
@@ -93,12 +93,12 @@ def main():
     styles=[]
     for fp in fps:
         ff = array([
-                co.target_function(Quat(sqrt(1.0 - tt ** 2), tt, 0.0, 0.0).q, fp)
+                co.target_function_value(Quat(sqrt(1.0 - tt ** 2), tt, 0.0, 0.0).q, fp)
                 for tt in sin(angles)
                 ])
 
         styles.append(plot(-angles*2*180/pi, ff, lw=2, color=ccc[ck])[0])
-        ck+=1
+        ck += 1
 
     plot([-answer*2*180/pi, -answer*2*180/pi], [0.0,2.0], 'k--')
     grid()
@@ -106,25 +106,62 @@ def main():
     legend(styles, ('Absolute','Quadratic','Tukey bisquare'), loc='lower right')
 
 
-    figure()
-    title('rectrckr simulation')
     tt = -pi/12
+    #tt = -pi/12 + 0.2
     qini = Quat(sqrt(1.0 - tt ** 2), tt, 0.0, 0.0)
 
     co = corisco.Corisco(edgels)
-    qopt = co.estimate_orientation(qini=qini)
+    co.qopt = ori_correct
 
-    print qini
-    print qopt
-    print ori_correct, co.target_function(ori_correct.q),\
-        co.gradient_function(ori_correct.q)
-
-    ion()
+    figure()
     ax = subplot(1,1,1)
+    title('rectrckr simulation')
+
     axis('equal')
     co.plot_vps(ax)
     co.plot_edgels(ax)
     axis([0,640,480,0])
 
+    co.qopt = qini
+
+    figure()
+    ax = subplot(1,1,1)
+    title('Estimation initial state')
+    axis('equal')
+    co.plot_vps(ax)
+    co.plot_edgels(ax)
+    axis([0,640,480,0])
+
+
+    qopt = co.estimate_orientation(qini=qini)
+
+    print qini, co.target_function_value(qini.q)
+    print qopt, co.target_function_value(qopt.q)
+    print ori_correct, co.target_function_value(ori_correct.q)
+
+    dd = 1e-6
+    print 'calgrad', co.target_function_gradient(ori_correct.q)
+    numgrad = array([
+        (co.target_function_value(ori_correct.q + array([dd,0,0,0])) -
+         co.target_function_value(ori_correct.q - array([dd,0,0,0]))) / (2*dd),
+        (co.target_function_value(ori_correct.q + array([0,dd,0,0])) -
+         co.target_function_value(ori_correct.q - array([0,dd,0,0]))) / (2*dd),
+        (co.target_function_value(ori_correct.q + array([0,0,dd,0])) -
+         co.target_function_value(ori_correct.q - array([0,0,dd,0]))) / (2*dd),
+        (co.target_function_value(ori_correct.q + array([0,0,0,dd])) -
+         co.target_function_value(ori_correct.q - array([0,0,0,dd]))) / (2*dd)
+        ])
+    print 'numgrad', numgrad
+
+
+    figure()
+    ax = subplot(1,1,1)
+    title('Estimation result')
+    axis('equal')
+    co.plot_vps(ax)
+    co.plot_edgels(ax)
+    axis([0,640,480,0])
+
+    
     code.interact(local=locals())
 

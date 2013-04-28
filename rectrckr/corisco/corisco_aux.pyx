@@ -778,7 +778,7 @@ def angle_error_with_jacobians(
     cdef unsigned int N, lab, lab_sel=0
 
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = ed_data[N*4+ 0]
         qy = ed_data[N*4+ 1]
@@ -819,10 +819,8 @@ def angle_error_with_jacobians(
 ######################################################################
 
 
-
-
-
 ###############################################################################
+##
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def classify_edgels(
@@ -874,7 +872,7 @@ def classify_edgels(
     cdef unsigned int N, lab, lab_sel=0
 
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         lab_sel = 0
         ## Read values for new edgel.
         qx = edgels[N, 0]
@@ -911,10 +909,8 @@ def classify_edgels(
         class_out[N,1] = minerr
 
     return class_out
-
-
-
-
+##
+###############################################################################
 
 
 ###############################################################################
@@ -1025,24 +1021,22 @@ cdef inline double rz__(int lab, int j, int k):
         elif j==2 and k==2: return -1
         elif j==3 and k==3: return  1
     return 0
+##
+###############################################################################
 
 
-
-
-######################################################################
-## The next three functions are being used right now with the
-## FilterSQP algorithm to estimate camera orientation from edgels. The
-## Jacobian matrices are re-calculated at every new iteration. This is
-## not the best approach because these matrices could be stored, but
-## this is necessary if we are estimating the camera intrinsic
-## parameters, and then they have to be re-calculated many times.
+###############################################################################
+## These next three functions are the current "official" ones used in
+## Corisco, to calculate the objective function value, gradient and
+## hessian for minimization by FilterSQP.  They re-calculate the
+## Jacobians every time.
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def angle_error(
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] q not None,
-                np.ndarray[DTYPE_t, ndim=2, mode="c"] edgels not None,
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] i_param not None,
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] rho_param not None):
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] q not None,
+    np.ndarray[DTYPE_t, ndim=2, mode="c"] edgels not None,
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] i_param not None,
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] rho_param not None):
 
     ## number of edgels
     cdef int Np = edgels.shape[0]
@@ -1084,7 +1078,7 @@ def angle_error(
     cdef unsigned int N, lab, lab_sel=0
 
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = edgels[N, 0]
         qy = edgels[N, 1]
@@ -1117,7 +1111,7 @@ def angle_error(
 
     return thesum
 
-## The calculation of the gradient
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def angle_error_gradient(
@@ -1179,7 +1173,7 @@ def angle_error_gradient(
         grad[k] = 0
 
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = edgels[N, 0]
         qy = edgels[N, 1]
@@ -1221,29 +1215,29 @@ def angle_error_gradient(
         err_ = L_x_over_L(lab_vec_prod,rho_data)
 
         for k in range(4):
-            vdx_[k] = 2*(dxdX * rx_(q_data,lab,k)
-                         + dxdY * ry_(q_data,lab,k)
-                         + dxdZ * rz_(q_data,lab,k))
-            vdy_[k] = 2*(dydX * rx_(q_data,lab,k)
-                         + dydY * ry_(q_data,lab,k)
-                         + dydZ * rz_(q_data,lab,k))
+            vdx_[k] = 2 * (dxdX * rx_(q_data, lab, k) +
+                           dxdY * ry_(q_data, lab, k) +
+                           dxdZ * rz_(q_data, lab, k))
+            vdy_[k] = 2 * (dydX * rx_(q_data, lab, k) +
+                           dydY * ry_(q_data, lab, k) +
+                           dydZ * rz_(q_data, lab, k))
 
-            vdnx_[k] = +vdy * (vdy*vdx_[k] - vdx*vdy_[k]) * deno15
-            vdny_[k] = -vdx * (vdy*vdx_[k] - vdx*vdy_[k]) * deno15
-            grad[k] += err_ * (ux*vdnx_[k] + uy*vdny_[k])
+            vdnx_[k] = +vdy * (vdy * vdx_[k] - vdx * vdy_[k]) * deno15
+            vdny_[k] = -vdx * (vdy * vdx_[k] - vdx * vdy_[k]) * deno15
+            grad[k] += err_ * (ux * vdnx_[k] + uy * vdny_[k])
 
     for k in range(4):
         grad_out[k] = grad[k]
     return grad_out
 
-## The calculation of the Hessian
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def angle_error_hessian(
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] q not None,
-                np.ndarray[DTYPE_t, ndim=2, mode="c"] edgels not None,
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] i_param not None,
-                np.ndarray[DTYPE2_t, ndim=1, mode="c"] rho_param not None):
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] q not None,
+    np.ndarray[DTYPE_t, ndim=2, mode="c"] edgels not None,
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] i_param not None,
+    np.ndarray[DTYPE2_t, ndim=1, mode="c"] rho_param not None):
 
     ## number of edgels
     cdef int Np = edgels.shape[0]
@@ -1303,7 +1297,7 @@ def angle_error_hessian(
             hess[j][k] = 0
     
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = edgels[N, 0]
         qy = edgels[N, 1]
@@ -1404,12 +1398,8 @@ def angle_error_hessian(
             hess_out[j,k] = hess[j][k]
 
     return hess_out
-
-## End of the three main procedures for filterSQP without stored
-## Jacobians.
 ##
 ######################################################################
-
 
 
 ######################################################################
@@ -1458,7 +1448,7 @@ def calculate_vdirs(
     cdef unsigned int N, lab, lab_sel=0
 
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = edgels[N, 0]
         qy = edgels[N, 1]
@@ -1486,9 +1476,6 @@ def calculate_vdirs(
     return out
 ##
 ###############################################################################
-
-
-
 
 
 ###############################################################################
@@ -1521,7 +1508,7 @@ def calculate_normals(
     cdef unsigned int N
     
     for N in range(Np):
-        minerr=10.
+        minerr=1.0e100
         ## Read values for new edgel.
         qx = edgels[N, 0]
         qy = edgels[N, 1]
@@ -1542,16 +1529,13 @@ def calculate_normals(
         normals[N,2] = nz
         
     return normals
-
-
-
-
-
+##
+###############################################################################
 
 
 ###############################################################################
-## The edgel extractor. The second version is for the method based on
-## Zernike moments.
+## Edgel extractor
+##
 cdef inline int sign(double x):
     return 1 if x > 0 else (-1 if x < 0 else 0)
 
@@ -1619,69 +1603,7 @@ cdef inline void get_normalized_gradient(int direction, int Ginc, int j, int k,
             gg[1] += -aux
             gg[0] += -gradx[3*k+Ginc*j+2]
 
-cdef inline void get_normalized_gradient_zernike(int direction, int Ginc, int j, int k,
-                                                 float* gg, float* ll, float * gradx,
-                                                 float* grady, float* laplace):
-    cdef float aux = 0
-    if direction == 1:
-        aux = gradx[3*k+Ginc*j]
-        if aux > 0:
-            gg[0] = aux
-            gg[1] = grady[3*k+Ginc*j]
-            ll[0] = laplace[3*k+Ginc*j]
-        else:
-            gg[0] = -aux
-            gg[1] = -grady[3*k+Ginc*j]
-            ll[0] = -laplace[3*k+Ginc*j]
-        aux = gradx[3*k+Ginc*j+1]
-        if aux > 0:
-            gg[0] += aux
-            gg[1] += grady[3*k+Ginc*j+1]
-            ll[0] += laplace[3*k+Ginc*j+1]
-        else:
-            gg[0] += -aux
-            gg[1] += -grady[3*k+Ginc*j+1]
-            ll[0] += -laplace[3*k+Ginc*j+1]
-        aux = gradx[3*k+Ginc*j+2]
-        if aux > 0:
-            gg[0] += aux
-            gg[1] += grady[3*k+Ginc*j+2]
-            ll[0] += laplace[3*k+Ginc*j+2]
-        else:
-            gg[0] += -aux
-            gg[1] += -grady[3*k+Ginc*j+2]
-            ll[0] += -laplace[3*k+Ginc*j+2]
-    else:
-        aux = grady[3*k+Ginc*j]
-        if aux > 0:
-            gg[1] = aux
-            gg[0] = gradx[3*k+Ginc*j]
-            ll[0] = laplace[3*k+Ginc*j]
-        else:
-            gg[1] = -aux
-            gg[0] = -gradx[3*k+Ginc*j]
-            ll[0] = -laplace[3*k+Ginc*j]
-        aux = grady[3*k+Ginc*j+1]
-        if aux > 0:
-            gg[1] += aux
-            gg[0] += gradx[3*k+Ginc*j+1]
-            ll[0] += laplace[3*k+Ginc*j+1]
-        else:
-            gg[1] += -aux
-            gg[0] += -gradx[3*k+Ginc*j+1]
-            ll[0] += -laplace[3*k+Ginc*j+1]
-        aux = grady[3*k+Ginc*j+2]
-        if aux > 0:
-            gg[1] += aux
-            gg[0] += gradx[3*k+Ginc*j+2]
-            ll[0] += laplace[3*k+Ginc*j+2]
-        else:
-            gg[1] += -aux
-            gg[0] += -gradx[3*k+Ginc*j+2]
-            ll[0] += -laplace[3*k+Ginc*j+2]
-
-## Copy the values of a 2D vector. Yeah, kind of think we should
-## optimize using SSE, etc.
+## Copy the values of a 2D vector.
 cdef inline void copy_2D(float*a, float*b):
     a[0]=b[0]
     a[1]=b[1]
@@ -1697,8 +1619,8 @@ cdef inline float norm_2D(float* x):
 @cython.wraparound(False)
 def edgel_extractor(
     int gstep, float glim,
-                np.ndarray[DTYPE_t, ndim=3, mode="c"] gradx not None,
-                np.ndarray[DTYPE_t, ndim=3, mode="c"] grady not None
+    np.ndarray[DTYPE_t, ndim=3, mode="c"] gradx not None,
+    np.ndarray[DTYPE_t, ndim=3, mode="c"] grady not None
     ):
 
     Nrows = gradx.shape[0]
@@ -1801,127 +1723,8 @@ def edgel_extractor(
         k += gstep
         
     return edgels[:Ned]
-
-
-def edgel_extractor_zernike(
-    int gstep, float glim,
-                np.ndarray[DTYPE_t, ndim=3, mode="c"] gradx not None,
-                np.ndarray[DTYPE_t, ndim=3, mode="c"] grady not None,
-                np.ndarray[DTYPE_t, ndim=3, mode="c"] laplace not None
-    ):
-
-    Nrows = gradx.shape[0]
-    Ncols = gradx.shape[1]
-
-    cdef int Ned = 0, Ned_max = 50000
-    cdef np.ndarray edgels = np.zeros([Ned_max,4], dtype=DTYPE)
-
-    cdef int direction
-
-    cdef int j,k
-
-    cdef int jini
-    cdef int jend
-    cdef int kini
-    cdef int kend
-
-    cdef float ga[2], gb[2], gc[2], gg[2]
-    cdef float na, nb, nc, la, lb, lc, dxt, dxy
-
-    cdef float sub
-
-    cdef int Ginc = 3*gradx.shape[1]
-
-    ## First the lines
-    jini = 7//2+(gradx.shape[0]//2-7//2)%gstep
-    jend = gradx.shape[0]-7//2
-    j = jini
-    while j < jend:
-        k=4
-
-        get_normalized_gradient_zernike(1,Ginc,j,k,gb,&lb,<float*>gradx.data,
-                                        <float*>grady.data,<float*>laplace.data)
-        nb = norm_2D(gb)
-        get_normalized_gradient_zernike(1,Ginc,j,k+1,gc,&lc,<float*>gradx.data,
-                                        <float*>grady.data,<float*>laplace.data)
-        nc = norm_2D(gc)
-        for k in range(5, gradx.shape[1]-5):
-            copy_2D(ga,gb)
-            na = nb
-            la = lb
-            copy_2D(gb,gc)
-            nb = nc
-            lb = lc
-            get_normalized_gradient_zernike(1,Ginc,j,k+1,gc,&lc,<float*>gradx.data,
-                                            <float*>grady.data,<float*>laplace.data)
-            nc = norm_2D(gc)
-            ## Test direction of the gradient, if it's too steep move on.
-            if gb[0] < 0.9*fabs(gb[1]):
-                continue
-            ## Test if this is a peak, and a strong one. If not, move on.
-            if not (nb>=na and nb>nc and nb > glim):
-                continue
-            # Normalized gradient direction.
-            dxt = gb[0]/nb
-            dyt = gb[1]/nb
-            ## Displacement in the sweeping direction. The 3.5 is for the 7x7 window...
-            sub = -(lb/nb)*(dyt*dyt/dxt + dxt)
-            (<float*>edgels.data)[4*Ned] = k+sub
-            (<float*>edgels.data)[4*Ned+1] = j
-            (<float*>edgels.data)[4*Ned+2] = dxt
-            (<float*>edgels.data)[4*Ned+3] = dyt
-            Ned += 1
-            if Ned == Ned_max:
-                    break
-        if Ned == Ned_max:
-            break
-        j += gstep
-
-    kini = 5//2+(gradx.shape[1]//2-5//2)%gstep
-    kend = gradx.shape[1]-5//2
-    k = kini
-    while k < kend:
-        j=4
-
-        get_normalized_gradient_zernike(0,Ginc,j,k,gb,&lb,<float*>gradx.data,
-                                        <float*>grady.data,<float*>laplace.data)
-        nb = norm_2D(gb)
-        get_normalized_gradient_zernike(0,Ginc,j+1,k,gc,&lc,<float*>gradx.data,
-                                        <float*>grady.data,<float*>laplace.data)
-        nc = norm_2D(gc)
-        for j in range(5, gradx.shape[0]-5):
-            copy_2D(ga,gb)
-            na = nb
-            la = lb
-            copy_2D(gb,gc)
-            nb = nc
-            lb = lc
-            get_normalized_gradient_zernike(0,Ginc,j+1,k,gc,&lc,<float*>gradx.data,
-                                            <float*>grady.data,<float*>laplace.data)
-            nc = norm_2D(gc)
-            ## Test direction of the gradient, if it's too steep move on.
-            if gb[1] < 0.9*fabs(gb[0]):
-                continue
-            ## Test if this is a peak, and a strong one. If not, move on.
-            if not (nb>=na and nb>nc and nb > glim):
-                continue
-            # Normalized gradient direction.
-            dxt = gb[0]/nb
-            dyt = gb[1]/nb
-            ## Displacement in the sweeping direction.
-            sub = -(lb/nb)*(dxt*dxt/dyt + dyt)
-            (<float*>edgels.data)[4*Ned] = k
-            (<float*>edgels.data)[4*Ned+1] = j+sub
-            (<float*>edgels.data)[4*Ned+2] = dxt
-            (<float*>edgels.data)[4*Ned+3] = dyt
-            Ned += 1
-            if Ned == Ned_max:
-                    break
-        if Ned == Ned_max:
-            break
-        k += gstep
-        
-    return edgels[:Ned]
+##
+###############################################################################
 
 
 def directional_error(
@@ -1943,6 +1746,7 @@ def directional_error(
     pa1 *= pa1
     pa2 *= pa2
     return pa1+pa2, norm
+
 
 def interpretation_plane_error(
     np.ndarray[DTYPE2_t, ndim=2, mode="c"] normals not None,

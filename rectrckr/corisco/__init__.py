@@ -27,10 +27,36 @@ def hess_f(x,*fargs):
 ##
 ######################################################################
 
+
+def aligned_quaternion(v):
+    ## The largest component
+    ll = np.argmax(np.abs(v))
+    ee = np.zeros(3)
+    ee[ll] = np.sign(v[ll])
+    q=Quat(np.cross(v, ee))
+    R = q.sqrt()
+
+    if np.sign(v[ll]) > 0:
+        if ll == 1:
+            R = R*Quat(1,-1,-1,-1).normalize()
+        if ll == 2:
+            R = R*Quat(1,1,1,1).normalize()
+
+    if np.sign(v[ll]) < 0:
+        if ll == 0:
+            R = R*Quat(0,0,1,0).normalize()
+        if ll == 1:
+            R = R*Quat(1,1,-1,1).normalize()
+        if ll == 2:
+            R = R*Quat(1,-1,-1,1).normalize()
+    return R.inverse()
+
+
 class Corisco():
 
     def __init__(self, edgels):
         self.edgels = edgels
+        self.Ned = self.edgels.shape[0]
 
         #focal_distance = 847.667796003
         #p_point = array([500, 375.0])
@@ -41,35 +67,84 @@ class Corisco():
         self.sqp_funcs = (val_c, grad_c, hess_c, val_f, grad_f, hess_f)
         
         ## Error function parameters (Tukey bisquare (3) with scale=0.15)
-        self.fp = array([3,1,0.15])
-        #self.fp = array([3,1,1.0])
-        #self.fp = array([2.0,1,0.1])
-        #self.fp = array([0.0,1])
-        #self.fp = array([1.0,1])
-        #self.fp = array([4.0,1,.15])
+        #self.loss = array([3.0,1,0.15])
+        #self.loss = array([3,1,1.0])
+        #self.loss = array([2.0,1,0.1])
+        self.loss = array([0.0,1])
+        #self.loss = array([1.0,1])
+        #self.loss = array([4.0,1,.15])
         ## Intrinsic parameters. pinhole mode (0)
         self.i_param = array([0.0, focal_distance, p_point[0], p_point[1]])
 
-    def estimate_orientation(self, qini):
-        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.fp)
+        self.normals = corisco_aux.calculate_normals(self.edgels, self.i_param)
 
-        filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-3,
+    def estimate_orientation(self, qini):
+        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.loss)
+        args_f = (self.edgels, self.i_param, self.loss)
+        
+        filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-6,
                                             self.sqp_funcs,
                                             args_f)
 
         xo, err, sqp_iters,Llam,Lrho = filterSQPout
-        self.qopt = Quat(xo)
-        return self.qopt
-    
+        return Quat(xo)
 
-    def target_function(self, x, fp=None):
-        if fp is None:
-            fp = self.fp
-        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, fp)
+    def random_search(self, initial_trials):
+        ## Estimate solution using RANSAC
+        bestv = np.Inf ## Smallest value found
+        args_f = (self.edgels, self.i_param, self.loss)
+        for k in range(initial_trials):
+            ## Pick indices of the reference normals. Re-sample until we
+            ## get a list of three different values.
+            pk_a = np.random.random_integers(0,self.Ned-1)
+            pk_b = np.random.random_integers(0,self.Ned-1)
+            while pk_b == pk_a:
+                pk_b = np.random.random_integers(0,self.Ned-1)
+            pk_c = np.random.random_integers(0,self.Ned-1)
+            while pk_c == pk_a or pk_c == pk_b:
+                pk_c = np.random.random_integers(0,self.Ned-1)
+
+            ## Get the normals with the first two chosen indices, and
+            ## calculate a rotation matrix that has the x axis aligned to
+            ## them.
+            n_a = self.normals[pk_a]
+            n_b = self.normals[pk_b]
+            vp1 = np.cross(n_a, n_b)
+            vp1 = vp1 * (vp1**2).sum()**-0.5
+            q1 = aligned_quaternion(vp1)
+
+            ## Pick a new random third norm, and find the rotation to align
+            ## the y direction to this edgel.
+            n_c = self.normals[pk_c]
+            vaux = np.dot(n_c, q1.rot())
+            ang = np.arctan2(vaux[1], -vaux[2])
+            q2 = Quat(np.sin(ang/2),0,0) * q1 ## The resulting orientation
+
+            ## Find the value of the target function for this sampled
+            ## orientation.
+            newv = corisco_aux.angle_error(q2.q, *args_f) 
+
+            ## If the value is the best yet, store solution.
+            if newv <= bestv :
+                bestv = newv
+                bpk_a = pk_a
+                bpk_b = pk_b
+                bpk_c = pk_c
+                qopt = q2
+        return qopt, bpk_a, bpk_b, bpk_c
+
+    def target_function_value(self, x, loss=None):
+        if loss is None:
+            loss = self.loss
+        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
+        args_f = (self.edgels, self.i_param, loss)
         return corisco_aux.angle_error(x, *args_f) 
 
-    def gradient_function(self, x):
-        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.fp)
+    def target_function_gradient(self, x, loss=None):
+        if loss is None:
+            loss = self.loss
+        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
+        args_f = (self.edgels, self.i_param, loss)
         return corisco_aux.angle_error_gradient(x, *args_f) 
 
     def plot_edgels(self, ax):
@@ -78,7 +153,7 @@ class Corisco():
                 (self.edgels[:,[1,1]] + scale*np.c_[-self.edgels[:,2], self.edgels[:,2]]).T,
                 '-',lw=3.0,alpha=1.0,color='#ff0000')
 
-    def plot_vps(self, ax):
+    def plot_vps(self, ax, qopt):
         #############################################################
         ## Plot the vanishing point directions at various pixels. ax
         ## is a matplotlib axes, taken with "gca()". Spacing the
@@ -91,7 +166,7 @@ class Corisco():
         by = 0.+(Iheight/2)%spacing
         qL = np.mgrid[bx:Iwidth:spacing,by:Iheight:spacing].T.reshape((-1,2))
         Nq = qL.shape[0]
-        vL = corisco_aux.calculate_vdirs(self.qopt.q, np.array(qL, dtype=np.float32), self.i_param)
+        vL = corisco_aux.calculate_vdirs(qopt.q, np.array(qL, dtype=np.float32), self.i_param)
         LL = np.zeros((3,Nq,4))
         for lab in range(3):
             for num in range(Nq):

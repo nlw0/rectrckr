@@ -58,8 +58,6 @@ class Quat:
         return np.sqrt((self.q**2).sum())
     def normalize(self):
         self.q = self.q / self.norm()
-        if self.q[0]<0:
-            self.q = self.q * -1
         return self
 
     def __mul__(self,bb):
@@ -114,18 +112,17 @@ class Quat:
 
         r = np.array([0.,0,0,0])
 
-        if v1 >= v2 and v1>=v3:
+        if v1 >= v2 and v1 >= v3:
             r[ii[0]] = np.sign(self.q[ii[0]])
-        elif v2 > v1 and v2>=v3:
+        elif v2 > v1 and v2 >= v3:
             r[ii[0]] = np.sign(self.q[ii[0]])
             r[ii[1]] = np.sign(self.q[ii[1]])
         else:
-            r = np.sign(self.q)
+            r = np.sign(self.q) 
+        print r
         r=Quat(r)
         r.normalize()
         return r.inverse() * self
-
-
 
 
 def matrix_to_quaternion(Q):
@@ -164,7 +161,6 @@ def matrix_to_quaternion(Q):
     out[p] = np.array([qu,qv,qw])*nf
     
     return out
-
 
 
 if __name__ == '__main__':
