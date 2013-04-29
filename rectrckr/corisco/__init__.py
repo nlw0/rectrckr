@@ -159,7 +159,23 @@ class Corisco():
             loss = self.loss
         # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
         args_f = (self.edgels, self.i_param, loss)
-        return corisco_aux.angle_error_gradient(x, *args_f) 
+        return corisco_aux.angle_error_gradient(x, *args_f)
+
+    def target_function_gradient_numeric(self, x, loss=None, dx=1e-6):
+        if loss is None:
+            loss = self.loss
+        args_f = (self.edgels, self.i_param, loss)
+                
+        return array([
+                (corisco_aux.angle_error(x + array([ dx,0,0,0]), *args_f) - 
+                 corisco_aux.angle_error(x + array([-dx,0,0,0]), *args_f)) / (2 * dx),
+                (corisco_aux.angle_error(x + array([0, dx,0,0]), *args_f) - 
+                 corisco_aux.angle_error(x + array([0,-dx,0,0]), *args_f)) / (2 * dx),
+                (corisco_aux.angle_error(x + array([0,0, dx,0]), *args_f) - 
+                 corisco_aux.angle_error(x + array([0,0,-dx,0]), *args_f)) / (2 * dx),
+                (corisco_aux.angle_error(x + array([0,0,0, dx]), *args_f) - 
+                 corisco_aux.angle_error(x + array([0,0,0,-dx]), *args_f)) / (2 * dx),
+                ])
 
     def plot_edgels(self, ax):
         scale = 20.0
