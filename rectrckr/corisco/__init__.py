@@ -79,10 +79,10 @@ class Corisco():
         self.normals = corisco_aux.calculate_normals(self.edgels, self.i_param)
 
     def estimate_orientation(self, qini):
-        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.loss)
-        args_f = (self.edgels, self.i_param, self.loss)
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.loss)
+        # args_f = (self.edgels, self.i_param, self.loss)
         
-        filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-6,
+        filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-1,
                                             self.sqp_funcs,
                                             args_f)
 
@@ -92,7 +92,7 @@ class Corisco():
     def ransac_search(self, initial_trials):
         ## Estimate solution using RANSAC
         bestv = np.Inf ## Smallest value found
-        args_f = (self.edgels, self.i_param, self.loss)
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.loss)
         for k in range(initial_trials):
             ## Pick indices of the reference normals. Re-sample until we
             ## get a list of three different values.
@@ -150,15 +150,15 @@ class Corisco():
     def target_function_value(self, x, loss=None):
         if loss is None:
             loss = self.loss
-        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
-        args_f = (self.edgels, self.i_param, loss)
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
+        # args_f = (self.edgels, self.i_param, loss)
         return corisco_aux.angle_error(x, *args_f) 
 
     def target_function_gradient(self, x, loss=None):
         if loss is None:
             loss = self.loss
-        # args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
-        args_f = (self.edgels, self.i_param, loss)
+        args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, loss)
+        # args_f = (self.edgels, self.i_param, loss)
         return corisco_aux.angle_error_gradient(x, *args_f)
 
     def target_function_gradient_numeric(self, x, loss=None, dx=1e-6):

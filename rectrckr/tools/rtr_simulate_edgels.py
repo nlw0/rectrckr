@@ -12,7 +12,7 @@ import scipy.misc
 from rectrckr.kalman_filter import KalmanFilter
 
 import rectrckr.corisco as corisco
-from rectrckr.corisco.quaternion import Quat
+from rectrckr.corisco.quaternion import Quat, random_quaternion
 import rectrckr.corisco.corisco_aux as corisco_aux
 
 class Camera:
@@ -88,50 +88,9 @@ def main():
     ccc=['#ea6949', '#51c373', '#a370ff', '#444444']
     ck=0
 
-    ion()
-    title(r'$\mathsf{Corisco}$ objective function for different loss functions')
-    styles=[]
-    for fp in fps:
-        ff = array([
-                co.target_function_value(Quat(sqrt(1.0 - tt ** 2), tt, 0.0, 0.0).q, fp)
-                for tt in sin(angles)
-                ])
-
-        styles.append(plot(-angles*2*180/pi, ff, lw=2, color=ccc[ck])[0])
-        ck += 1
-
-    plot([-answer*2*180/pi, -answer*2*180/pi], [0.0,2.0], 'k--')
-    grid()
-
-    legend(styles, ('Absolute','Quadratic','Tukey bisquare'), loc='lower right')
-
-
-    tt = -pi/12
-    #tt = -pi/12 + 0.2
-    qini = Quat(sqrt(1.0 - tt ** 2), tt, 0.0, 0.0)
+    qini = ori_correct * random_quaternion(0.2)
 
     co = corisco.Corisco(edgels)
-    co.qopt = ori_correct
-
-    figure()
-    ax = subplot(1,1,1)
-    title('rectrckr simulation')
-
-    axis('equal')
-    co.plot_vps(ax)
-    co.plot_edgels(ax)
-    axis([0,640,480,0])
-
-    co.qopt = qini
-
-    figure()
-    ax = subplot(1,1,1)
-    title('Estimation initial state')
-    axis('equal')
-    co.plot_vps(ax)
-    co.plot_edgels(ax)
-    axis([0,640,480,0])
-
 
     qopt = co.estimate_orientation(qini=qini)
 
@@ -139,26 +98,28 @@ def main():
     print qopt, co.target_function_value(qopt.q)
     print ori_correct, co.target_function_value(ori_correct.q)
 
-    dd = 1e-6
-    print 'calgrad', co.target_function_gradient(ori_correct.q)
-    numgrad = array([
-        (co.target_function_value(ori_correct.q + array([dd,0,0,0])) -
-         co.target_function_value(ori_correct.q - array([dd,0,0,0]))) / (2*dd),
-        (co.target_function_value(ori_correct.q + array([0,dd,0,0])) -
-         co.target_function_value(ori_correct.q - array([0,dd,0,0]))) / (2*dd),
-        (co.target_function_value(ori_correct.q + array([0,0,dd,0])) -
-         co.target_function_value(ori_correct.q - array([0,0,dd,0]))) / (2*dd),
-        (co.target_function_value(ori_correct.q + array([0,0,0,dd])) -
-         co.target_function_value(ori_correct.q - array([0,0,0,dd]))) / (2*dd)
-        ])
-    print 'numgrad', numgrad
+    ion()
+    figure()
+    ax = subplot(1,1,1)
+    title('rectrckr simulation')
+    axis('equal')
+    co.plot_vps(ax, ori_correct)
+    co.plot_edgels(ax)
+    axis([0,640,480,0])
 
+    figure()
+    ax = subplot(1,1,1)
+    title('Estimation initial state')
+    axis('equal')
+    co.plot_vps(ax, qini)
+    co.plot_edgels(ax)
+    axis([0,640,480,0])
 
     figure()
     ax = subplot(1,1,1)
     title('Estimation result')
     axis('equal')
-    co.plot_vps(ax)
+    co.plot_vps(ax, qopt)
     co.plot_edgels(ax)
     axis([0,640,480,0])
 

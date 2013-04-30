@@ -311,9 +311,6 @@ def filterSQP(x0, lam0, rho0, funcs, args_f, delta_tol=1e-15):
 
         if np.abs(val_c(x)-1) < 1e-15 and np.abs(delta).sum() < delta_tol:
             break
-        print x, val_f(x, *args_f), delta
-    print Llam
-    print Lrho
     return x, val_f(x,*args_f), it, Llam, Lrho
 
 def run_lots_of_cases(Ncase):

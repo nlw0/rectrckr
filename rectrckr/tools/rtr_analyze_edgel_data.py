@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description='File containing edgel information, Nframes * Nedgels lines.')
     parser.add_argument('input', type=argparse.FileType('r'))
     parser.add_argument('log_edgel', type=argparse.FileType('r'))
-    #parser.add_argument('frame', type=int)
+    parser.add_argument('--frame', type=int, default=0)
 
     args = parser.parse_args()
 
@@ -39,20 +39,21 @@ def main():
     fig.tight_layout()
     ax = subplot(1,1,1)
 
-    for k in range(0,772):
+    for k in range(args.frame,772):
         edgels = array(log_edgels[k*12:(k+1)*12], dtype=float32)
 
         imgana = ds.get_image(k)
         img = imgana.img
 
         co = corisco.Corisco(edgels)
-        qopt = co.estimate_orientation(qini=qopt)
+        qini = co.ransac_search(100)[0].canonical()
+        qopt = co.estimate_orientation(qini=qini)
         print k, qopt
 
         cla()
         imshow(img, cmap=cm.gray)
         axis('equal')
-        co.plot_vps(ax)
+        co.plot_vps(ax, qopt)
         co.plot_edgels(ax)
 
         axis([0, 640, 480, 0])
