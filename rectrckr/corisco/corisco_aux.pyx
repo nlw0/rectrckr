@@ -780,18 +780,18 @@ def angle_error_with_jacobians(
     for N in range(Np):
         minerr=1.0e100
         ## Read values for new edgel.
-        qx = ed_data[N*4+ 0]
-        qy = ed_data[N*4+ 1]
-        ux = ed_data[N*4+ 2]
-        uy = ed_data[N*4+ 3]
+        qx = ed_data[N * 4 + 0]
+        qy = ed_data[N * 4 + 1]
+        ux = ed_data[N * 4 + 2]
+        uy = ed_data[N * 4 + 3]
 
         ## Read the Jacbian coefficients.
-        dxdX = J_data[N*6+0]
-        dxdY = J_data[N*6+1]
-        dxdZ = J_data[N*6+2]
-        dydX = J_data[N*6+3]
-        dydY = J_data[N*6+4]
-        dydZ = J_data[N*6+5]               
+        dxdX = J_data[N * 6 + 0]
+        dxdY = J_data[N * 6 + 1]
+        dxdZ = J_data[N * 6 + 2]
+        dydX = J_data[N * 6 + 3]
+        dydY = J_data[N * 6 + 4]
+        dydZ = J_data[N * 6 + 5]
 
         ##############################################################
         ## Calculate the predicted value and the error for each
@@ -800,7 +800,7 @@ def angle_error_with_jacobians(
             ## Pick coordinates of current VP direction being tested
             rx = r00 if lab==0 else (r10 if lab==1 else r20)
             ry = r01 if lab==0 else (r11 if lab==1 else r21)
-            rz = r02 if lab==0 else (r12 if lab==1 else r22)        
+            rz = r02 if lab==0 else (r12 if lab==1 else r22)
 
             ## Find the predicted edgel direction.
             vx = dxdX * rx + dxdY * ry + dxdZ * rz
@@ -1100,10 +1100,10 @@ def angle_error(
             ## Find the predicted edgel direction.
             vx = dxdX * rx + dxdY * ry + dxdZ * rz
             vy = dydX * rx + dydY * ry + dydZ * rz
-            normalize(&vx,&vy)
+            normalize(&vx, &vy)
             ## Calculate angle error using vector product, then use
             ## the selected M-estimator to calculate the residue.
-            vec_prod = ux*vx+uy*vy
+            vec_prod = ux * vx + uy * vy
             err = mlogL(vec_prod, <double*>rho_param.data)
             minerr = err if err < minerr else minerr
         ## Add the smallest error from this edgel to the total error.
@@ -1148,7 +1148,7 @@ def angle_error_gradient(
 
     ## The vectors
     cdef double qx,qy,ux,uy
-    cdef double vx,vy,vdx, vdy, vdnx, vdny
+    cdef double vx,vy,vdx, vdy, vdnx, vdny, vdx_sel, vdy_sel
 
     ## Derivatives of the calculated vector
     cdef double vx_[4], vy_[4], vdnx_[4], vdny_[4], vdx_[4], vdy_[4]
@@ -1196,23 +1196,27 @@ def angle_error_gradient(
             vdx = dxdX * rx + dxdY * ry + dxdZ * rz
             vdy = dydX * rx + dydY * ry + dydZ * rz
 
-            deno15 = inv_norm_1_5(vdx,vdy)
-
             ## Normalize the distorted direction
             vdnx = vdx
             vdny = vdy
             normalize(&vdnx,&vdny)
             ## Calculate angle error using vector product, then use
             ## the selected M-estimator to calculate the residue.
-            vec_prod = ux*vdnx+uy*vdny
+            vec_prod = ux * vdnx + uy * vdny
             err = mlogL(vec_prod, rho_data)
             if err < minerr:
                 minerr = err
                 lab_sel = lab
                 lab_vec_prod = vec_prod
-
+                vdx_sel = vdx
+                vdy_sel = vdy
+                
         lab = lab_sel
-        err_ = L_x_over_L(lab_vec_prod,rho_data)
+        vdx = vdx_sel
+        vdy = vdy_sel
+
+        deno15 = inv_norm_1_5(vdx,vdy)
+        err_ = L_x_over_L(lab_vec_prod, rho_data)
 
         for k in range(4):
             vdx_[k] = 2 * (dxdX * rx_(q_data, lab, k) +
@@ -1267,7 +1271,7 @@ def angle_error_hessian(
 
     ## The vectors
     cdef double qx,qy,ux,uy
-    cdef double vx,vy,vdx, vdy, vdnx, vdny
+    cdef double vx,vy,vdx, vdy, vdnx, vdny, vdx_sel, vdy_sel
 
     ## Where the sum will be accumulated
     cdef np.ndarray hess_out = np.zeros([4,4], dtype=DTYPE2)
@@ -1320,9 +1324,6 @@ def angle_error_hessian(
             vdx = dxdX * rx + dxdY * ry + dxdZ * rz
             vdy = dydX * rx + dydY * ry + dydZ * rz
 
-            deno15 = inv_norm_1_5(vdx,vdy)
-            deno25 = inv_norm_2_5(vdx,vdy)
-
             ## Normalize the distorted direction
             vdnx = vdx
             vdny = vdy
@@ -1335,11 +1336,41 @@ def angle_error_hessian(
                 minerr = err
                 lab_sel = lab
                 lab_vec_prod = vec_prod
+                vdx_sel = vdx
+                vdy_sel = vdy
 
         lab = lab_sel
+        vdx = vdx_sel
+        vdy = vdy_sel
+
+        ####################################################################
+        ## Redo previous block. This is terrible must create a proper
+        ## encapsulating function.
+
+        ## Pick coordinates of current VP
+        ## direction being tested
+        rx = r00 if lab==0 else (r10 if lab==1 else r20)
+        ry = r01 if lab==0 else (r11 if lab==1 else r21)
+        rz = r02 if lab==0 else (r12 if lab==1 else r22)        
+
+        ## Find the predicted edgel direction.
+        vdx = dxdX * rx + dxdY * ry + dxdZ * rz
+        vdy = dydX * rx + dydY * ry + dydZ * rz
+
+        ## Normalize the distorted direction
+        vdnx = vdx
+        vdny = vdy
+        normalize(&vdnx,&vdny)
+        ## Calculate angle error using vector product, then use
+        ## the selected M-estimator to calculate the residue.
+        vec_prod = ux*vdnx+uy*vdny
+        err = mlogL(vec_prod, rho_data)
+        ###################################################################
+
+        deno15 = inv_norm_1_5(vdx,vdy)
+        deno25 = inv_norm_2_5(vdx,vdy)
         err_ = L_x_over_L(lab_vec_prod, rho_data)
         err__ = L_x_over_L__x(lab_vec_prod, rho_data)
-
 
         ## Gradient calculation
         for k in range(4):

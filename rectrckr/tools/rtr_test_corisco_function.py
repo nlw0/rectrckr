@@ -9,6 +9,7 @@ import rectrckr.lowlevel as lowlevel
 
 from pylab import *
 import scipy.misc
+import scipy.signal
 
 from rectrckr.kalman_filter import KalmanFilter
 
@@ -70,14 +71,6 @@ class Scene:
         return array(edgels, dtype=float32)
 
 
-def plot_edgels(edgels, ax):
-    vv = array([-1,1])*10.0
-    for ee in edgels:
-        ax.plot(ee[0]+vv*ee[2], ee[1]+vv*ee[3], 'r-', lw=2)
-    axis('equal')
-    axis([0,640,480,0.0])
-
-
 def corisco_function_test(scene, Niters):
     qori = random_quaternion().canonical()
     edgels = scene.project(qori)
@@ -136,7 +129,10 @@ def main():
             multiple_ransac_test(args.test_iters, args.multiple)
         
     elif args.test == 'gradient':
-        single_gradient_test(args.test_iters)
+        if args.multiple is None:
+            single_gradient_test()
+        else:
+            multiple_gradient_test(args.multiple)
         
 
 def single_fvalue_test(Ntest_iters):
@@ -158,6 +154,7 @@ def single_gradient_test(Ntest_iters):
 
     dq = 2e-2
     qq = [
+        Quat(1.0, 0, 0,0),
         Quat(1.0, dq,0,0),
         Quat(1.0,-dq,0,0),
         Quat(1.0,0, dq,0),
@@ -166,8 +163,10 @@ def single_gradient_test(Ntest_iters):
         Quat(1.0,0,0,-dq),
         ]
 
-    #qori = random_quaternion().canonical()
-    qori = Quat(1.0,0.1,0.1,0).normalize()
+    qori = random_quaternion().canonical()
+    #qori = Quat(1.0,0,0,0).normalize()
+    #qori = Quat(0.0,1,0,0).normalize()
+    #qori = Quat(1.0,0.1,0.1,0).normalize()
 
     print qori
     print
@@ -178,7 +177,7 @@ def single_gradient_test(Ntest_iters):
         print g2, dot((qori * qdelta).q, g2)
         print
 
-    plot_results(scene, qori)
+    plot_results(scene, qori, qori * qdelta)
 
 def multiple_fvalue_test(Ntest_iters, Ntests):
     scene = Scene()
@@ -200,6 +199,45 @@ def multiple_ransac_test(Ntest_iters, Ntests):
         err[k] = print_oris_get_err(qori,qest)
     print 'Error mean and std', err.mean(), err.std()
     plot_err(err)
+
+
+def multiple_gradient_test(Ntests):
+    scene = Scene()
+
+    l1 = zeros((Ntests, 4))
+    l2 = zeros((Ntests, 4))
+    l3 = zeros((Ntests, 4))
+    l4 = zeros((Ntests, 4))
+    lang = zeros(Ntests)
+    for k in xrange(Ntests):
+        qori = random_quaternion()
+        corisco = corisco_module.Corisco(scene.project(qori))
+        qrand = random_quaternion()
+
+        # Test gradient at solution. Should be pretty close to 0.
+        l1[k] = corisco.target_function_gradient(qori.q)
+        l2[k] = corisco.target_function_gradient_numeric(qori.q, dx=1e-6)
+
+        # Test gradient at random point
+        l3[k] = corisco.target_function_gradient(qrand.q)
+        l4[k] = corisco.target_function_gradient_numeric(qrand.q, dx=1e-6)
+
+        lang[k] = dot(qrand.q, l3[k])
+
+
+    print 'Gradient projection on quaternion should be pretty low', mean(lang), std(lang)
+    print 'Mean and covariances from gradients at the solution, arithmetic and '\
+        'numeric. Should all be low.'
+    print mean(l1,0)
+    print cov(l1.T)
+    print mean(l2,0)
+    print cov(l2.T)
+
+    print 'Covariances from gradients at generic points, and the difference '\
+        'between the arithmetic and numeric.'
+    print cov(l3.T)
+    print cov(l4.T)
+    print cov((l3-l4).T)
 
 
 def print_oris_get_err(qori, qest):
