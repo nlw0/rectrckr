@@ -16,8 +16,7 @@ setuptools.setup(
             "rtr_edgel_tracker = rectrckr.tools.rtr_edgel_tracker:main",
             "rtr_analyze_edgel_data = rectrckr.tools.rtr_analyze_edgel_data:main",
             "rtr_simulate_edgels = rectrckr.tools.rtr_simulate_edgels:main",
-            "rtr_test_corisco_ransac = rectrckr.tools.rtr_test_corisco_ransac:main",
-            "rtr_test_corisco_function = rectrckr.tools.rtr_test_corisco_function:main",
+            "rtr_test_corisco = rectrckr.tools.rtr_test_corisco:main",
         ]
     },
     install_requires=[

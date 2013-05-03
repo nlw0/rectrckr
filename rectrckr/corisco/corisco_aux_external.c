@@ -46,26 +46,23 @@ union f4vector
 };
 
 
-
-
-
 /* Uses rsqrt instruction intrinsic to calculate reciprocal of square root */
 inline void SSE_rsqrt( float *pOut, float *pIn )
 {
     _mm_store_ss( pOut, _mm_rsqrt_ss( _mm_load_ss( pIn ) ) );
 }
 
-/* Gets rsqrt estimate then perform as ingle step of the
+/* Gets rsqrt estimate then perform as single step of the
    Newton-Raphson iteration. */
 inline void SSE_rsqrt_NR( float *pOut, float *pIn )
 {
     _mm_store_ss( pOut, _mm_rsqrt_ss( _mm_load_ss( pIn ) ) );
-    // compiles to movss, sqrtss, movss
-    *pOut *= ((3.0f - *pOut * *pOut * *pIn) * 0.5f);
+    if (*pOut < 1e10) {
+      *pOut *= ((3.0f - *pOut * *pOut * *pIn) * 0.5f);
+    } else {
+      *pOut = 1e10;
+    }
 }
-
-
-
 
 
 /** SSE Vector operations */

@@ -1091,7 +1091,7 @@ def angle_error(
         ##############################################################
         ## Calculate the predicted value and the error for each
         ## direction.
-        for lab in range(3):
+        for lab in range(2):
             ## Pick coordinates of current VP direction being tested
             rx = r00 if lab==0 else (r10 if lab==1 else r20)
             ry = r01 if lab==0 else (r11 if lab==1 else r21)
@@ -1343,34 +1343,11 @@ def angle_error_hessian(
         vdx = vdx_sel
         vdy = vdy_sel
 
-        ####################################################################
-        ## Redo previous block. This is terrible must create a proper
-        ## encapsulating function.
-
-        ## Pick coordinates of current VP
-        ## direction being tested
-        rx = r00 if lab==0 else (r10 if lab==1 else r20)
-        ry = r01 if lab==0 else (r11 if lab==1 else r21)
-        rz = r02 if lab==0 else (r12 if lab==1 else r22)        
-
-        ## Find the predicted edgel direction.
-        vdx = dxdX * rx + dxdY * ry + dxdZ * rz
-        vdy = dydX * rx + dydY * ry + dydZ * rz
-
-        ## Normalize the distorted direction
-        vdnx = vdx
-        vdny = vdy
-        normalize(&vdnx,&vdny)
-        ## Calculate angle error using vector product, then use
-        ## the selected M-estimator to calculate the residue.
-        vec_prod = ux*vdnx+uy*vdny
-        err = mlogL(vec_prod, rho_data)
-        ###################################################################
-
         deno15 = inv_norm_1_5(vdx,vdy)
         deno25 = inv_norm_2_5(vdx,vdy)
         err_ = L_x_over_L(lab_vec_prod, rho_data)
         err__ = L_x_over_L__x(lab_vec_prod, rho_data)
+
 
         ## Gradient calculation
         for k in range(4):

@@ -307,7 +307,7 @@ def filterSQP(x0, lam0, rho0, funcs, args_f, delta_tol=1e-15):
         Lrho.append(rho)
         if not filt_pass:
             continue
-        x = x + delta        
+        x = x + delta
 
         if np.abs(val_c(x)-1) < 1e-15 and np.abs(delta).sum() < delta_tol:
             break
@@ -410,7 +410,6 @@ if __name__ == '__main__':
     filt = FletcherFilter()
     filt_pass = True
 
-
     for it in range(0,Niter):
         logx[it] = x
         logl[it] = lam
@@ -428,6 +427,7 @@ if __name__ == '__main__':
         if not filt_pass:
             continue
         x = x + delta        
+
         if np.abs(val_c(x)-1) < 1e-15 and np.abs(delta).sum() < 1e-15:
             break
 

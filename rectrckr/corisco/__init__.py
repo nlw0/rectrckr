@@ -67,10 +67,10 @@ class Corisco():
         self.sqp_funcs = (val_c, grad_c, hess_c, val_f, grad_f, hess_f)
         
         ## Error function parameters (Tukey bisquare (3) with scale=0.15)
-        #self.loss = array([3.0,1,0.15])
+        #self.loss = array([0.0,1])
+        self.loss = array([3.0,1,0.15])
         #self.loss = array([3,1,1.0])
         #self.loss = array([2.0,1,0.1])
-        self.loss = array([0.0,1])
         #self.loss = array([1.0,1])
         #self.loss = array([4.0,1,.15])
         ## Intrinsic parameters. pinhole mode (0)
@@ -81,7 +81,7 @@ class Corisco():
     def estimate_orientation(self, qini):
         args_f = (self.edgels[~isnan(self.edgels[:,2])], self.i_param, self.loss)
         # args_f = (self.edgels, self.i_param, self.loss)
-        
+
         filterSQPout = filter_sqp.filterSQP(qini.q, .0, 1e-1,
                                             self.sqp_funcs,
                                             args_f)
@@ -203,7 +203,8 @@ class Corisco():
                 vx,vy = vL[lab,num]
                 k,j = qL[num]
                 LL[lab,num,:] = np.r_[k+vx*qq, j+vy*qq]
-        for lab in range(3):
-            ax.plot( LL[lab,:,:2].T, LL[lab,:,2:].T, dir_colors[lab], lw=3, alpha=1.0 if lab<2 else 0.3)
+        for lab in [2,1,0]:
+            #ax.plot( LL[lab,:,:2].T, LL[lab,:,2:].T, dir_colors[lab], lw=3, alpha=1.0 if lab<2 else 0.3)
+            ax.plot( LL[lab,:,:2].T, LL[lab,:,2:].T, dir_colors[lab], lw=3)
         ##
         #############################################################

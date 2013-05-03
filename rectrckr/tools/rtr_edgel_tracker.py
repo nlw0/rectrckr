@@ -13,6 +13,9 @@ import code
 
 from rectrckr.kalman_filter import KalmanFilter
 
+import rectrckr.corisco as corisco_module
+from rectrckr.corisco.quaternion import Quat, random_quaternion
+
 def main():
 
     parser = argparse.ArgumentParser(description='Initial rectangle localization.')
@@ -72,6 +75,7 @@ def main():
     log_zh = zeros((args.img_b-args.img_a,4))
     log_z = zeros((args.img_b-args.img_a,4))
     log_edgels = zeros(((args.img_b-args.img_a)*12,4))
+    qopt = Quat(1.0,0,0,0)
     for k in range(args.img_b-args.img_a):
 
         print '--['+'%03d'%(k + args.img_a)+']' + 70 * '-'
@@ -97,17 +101,24 @@ def main():
         kalman.update_from_observations(new_data)
         print 'updt st:', kalman.state
 
-        # ## Log predicted state and outputs
+        ## Log predicted state and outputs
         log_zh[k] = zhat
         log_z[k] = new_data
 
         dirs = array([imgana.estimate_direction_at_point(int(round(new_edgels[ed,0])),
                                                          int(round(new_edgels[ed,1])))
                       for ed in range(12)])
-        print dirs
         dirs = array([dd/norm(dd) for dd in dirs])
 
-        log_edgels[k*12:(k+1)*12] = c_[new_edgels, dirs]
+        edgels = ascontiguousarray(array(c_[new_edgels, dirs], dtype=float32))
+
+        log_edgels[k*12:(k+1)*12] = edgels
+
+        corisco = corisco_module.Corisco(edgels)
+        qini = qopt#Quat(1.0,0,0,0)
+
+        qopt = corisco.estimate_orientation(qini)
+
 
         ##
         ## Plot image and the extracted edges
@@ -120,20 +131,12 @@ def main():
         plot([px,px], zhat[2:4], 'bx')
         plot(px,py, 'bs')
 
-        for ed in range(12):
-            plot(new_edgels[ed,0]+dirs[ed,0]*cc,
-                 new_edgels[ed,1]+dirs[ed,1]*cc,
-                 'b-', lw=2)
-            plot(new_edgels[ed,0]+dirs[ed,1]*vv,
-                 new_edgels[ed,1]-dirs[ed,0]*vv,
-                 'r-', lw=2)
+        corisco.plot_edgels(gca())
+        corisco.plot_vps(gca(), qopt)
 
-        # plot(new_data[:2], [py,py], 'ro')
-        # plot([px,px], new_data[2:4], 'ro')
         plot(px,py, 'rs')
 
         axis([0,img.shape[1],img.shape[0],0])
-
         savefig(ds.get_output_path(k))
 
     ##
