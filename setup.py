@@ -17,6 +17,7 @@ setuptools.setup(
             "rtr_analyze_edgel_data = rectrckr.tools.rtr_analyze_edgel_data:main",
             "rtr_simulate_edgels = rectrckr.tools.rtr_simulate_edgels:main",
             "rtr_test_corisco = rectrckr.tools.rtr_test_corisco:main",
+            "rtr_test_filter = rectrckr.tools.rtr_test_filter:main",
         ]
     },
     install_requires=[
