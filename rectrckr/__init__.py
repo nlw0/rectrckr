@@ -96,7 +96,7 @@ class Camera:
         
     def set_orientation(self, ori):
         self.orientation = ori
-        
+
     def plot_points(self, ax, scn):
         pp = self.project_points(scn.points)
 
@@ -105,10 +105,31 @@ class Camera:
         ax.axis([0,self.shape[0], self.shape[1], 0])
 
     def plot_edges(self, ax, scn):
+        ip = self.project_edges(scn)
+
+        for k in xrange(ip.shape[0]/2):
+            ax.plot([ip[2*k,0], ip[2*k+1,0]],
+                    [ip[2*k,1], ip[2*k+1,1]],                  
+                    'r-', lw=2, color=dir_colors[int(scn.edges[k,0])])
+
+        ax.axis('equal')
+        ax.axis([0,self.shape[0], self.shape[1], 0])
+
+    def edgels_from_edges(self, scn):
+        ip = self.project_edges(scn)
+
+        out = numpy.zeros((ip.shape[0]/2, 4))
+        for k in xrange(ip.shape[0]/2):
+            aa = ip[2 * k]
+            bb = ip[2 * k + 1]
+            direction = numpy.arctan2(*(aa - bb))
+
+            out[k] = numpy.r_[(aa + bb) * .5, numpy.cos(direction), -numpy.sin(direction)]
+        return out
+
+    def project_edges(self, scn):
         M = self.orientation.rot()
         pp = []
-        pp1 = numpy.zeros(3)
-        pp2 = numpy.zeros(3)
         for d,x1,x2,y,z in scn.edges:
             if d == 0:
                 pp.append([x1,y,z])
@@ -119,20 +140,43 @@ class Camera:
             elif d == 2:
                 pp.append([y,z,x1])
                 pp.append([y,z,x2])
+        return self.project_points(numpy.array(pp))
 
-        ip = self.project_points(numpy.array(pp))
+    def plot_edgels(self, ax, edgels):
+        scale = 20.0
+        ax.plot((edgels[:,[0,0]] - scale*numpy.c_[-edgels[:,3], edgels[:,3]]).T,
+                (edgels[:,[1,1]] + scale*numpy.c_[-edgels[:,2], edgels[:,2]]).T,
+                '-',lw=3.0,alpha=1.0,color='#ff0000')
 
-        for k in xrange(ip.shape[0]/2):
-            ax.plot([ip[2*k,0], ip[2*k+1,0]],
-                    [ip[2*k,1], ip[2*k+1,1]],                  
-                    'r-', lw=2, color=dir_colors[int(scn.edges[k,0])])
+        
 
-        ax.axis('equal')
-        ax.axis([0,self.shape[0], self.shape[1], 0])
+
 
 
 class SceneModel:
-    def __init__(self, edges, points):
-        self.edges = edges
-        self.points = points
+    def __init__(self, model):
 
+        if model == 'cube':
+            self.edges = numpy.array([
+                    [0, -1, +1, -1, -1],[0, -1, +1, -1,  1],
+                    [0, -1, +1,  1, -1],[0, -1, +1,  1,  1],
+                    [1, -1, +1, -1, -1],[1, -1, +1, -1,  1],
+                    [1, -1, +1,  1, -1],[1, -1, +1,  1,  1],
+                    [2, -1, +1, -1, -1],[2, -1, +1, -1,  1],
+                    [2, -1, +1,  1, -1],[2, -1, +1,  1,  1], ])
+            self.points = numpy.array([
+                    [-1,-1, 1], [-1,-1,-1],
+                    [-1, 1, 1], [-1, 1,-1],
+                    [ 1,-1, 1], [ 1,-1,-1],
+                    [ 1, 1, 1], [ 1, 1,-1], ])
+        elif model == 'a4paper':
+            self.edges = numpy.array([
+                    [0, -1.4142, +1.4142, -1,  0],
+                    [0, -1.4142, +1.4142,  1,  0],
+                    [1, -1, +1,  0, -1.4142], 
+                    [1, -1, +1,  0,  1.4142], ])
+            self.points = numpy.array([
+                    [-1.4142,-1, 0], [-1.4142, 1, 0],
+                    [ 1.4142,-1, 0], [ 1.4142, 1, 0], ])
+        else:
+            raise Exception('Invalid model')

@@ -19,69 +19,52 @@ from rectrckr.corisco.quaternion import Quat, random_quaternion
 
 def main():
     parser = argparse.ArgumentParser(description='Initial rectangle localization.')
-    parser.add_argument('pose', type=PoseString)
+    parser.add_argument('test', type=str, choices=['plot', 'error'])
+    parser.add_argument('--pose', type=PoseString, required=True)
+    parser.add_argument('--model', type=str, choices=['cube', 'a4paper'], required=True)
+    parser.add_argument('--edgels', type=str)
+
 
     args = parser.parse_args()
 
-    # line_segments = array([
-    #         [0, -1, +1, -1, -1],
-    #         [0, -1, +1, -1,  1],
-    #         [0, -1, +1,  1, -1],
-    #         [0, -1, +1,  1,  1],
-    #         [1, -1, +1, -1, -1],
-    #         [1, -1, +1, -1,  1],
-    #         [1, -1, +1,  1, -1],
-    #         [1, -1, +1,  1,  1],
-    #         [2, -1, +1, -1, -1],
-    #         [2, -1, +1, -1,  1],
-    #         [2, -1, +1,  1, -1],
-    #         [2, -1, +1,  1,  1],
-    #         ])
-
-    # landmarks = array([
-    #         [-1,-1, 1],
-    #         [-1,-1,-1],
-    #         [-1, 1, 1],
-    #         [-1, 1,-1],
-    #         [ 1,-1, 1],
-    #         [ 1,-1,-1],
-    #         [ 1, 1, 1],
-    #         [ 1, 1,-1],
-    #         ])
-
-
-    line_segments = array([
-            [0, -sqrt(2), +sqrt(2), -1,  0],
-            [0, -sqrt(2), +sqrt(2), -1,  0],
-            [0, -sqrt(2), +sqrt(2),  1,  0],
-            [0, -sqrt(2), +sqrt(2),  1,  0],
-            [1, -1, +1,  0, -sqrt(2)],
-            [1, -1, +1,  0,  sqrt(2)],
-            [1, -1, +1,  0, -sqrt(2)],
-            [1, -1, +1,  0,  sqrt(2)],
-            ])
-
-    landmarks = array([
-            [-sqrt(2),-1, 0],
-            [-sqrt(2), 1, 0],
-            [ sqrt(2),-1, 0],
-            [ sqrt(2), 1, 0],
-            ])
-
-
-
-    scene = rectrckr.SceneModel(line_segments, landmarks)
+    scene = rectrckr.SceneModel(args.model)
     camera = rectrckr.Camera()
 
     camera.set_position(args.pose[:3])
     camera.set_orientation(Quat(array(args.pose[3:7])))
 
+    if args.edgels is not None:
+        edgels = loadtxt(args.edgels)
+
+
+
+
+
     figure()
     ion()
-    camera.plot_points(gca(), scene)
     camera.plot_edges(gca(), scene)
+    camera.plot_points(gca(), scene)
     plot(camera.center[0], camera.center[1], 'kx')
+
+    if args.edgels is not None:
+        camera.plot_edgels(gca(), edgels)
+        print "Predicted edgels"
+        pe = camera.edgels_from_edges(scene)
+
+        for k in range(4):
+            print edgel_error(edgels[k], pe[k])
+
     grid()
     show()
 
+
+
     code.interact(local=locals())
+
+
+def edgel_error(obs, pred):
+
+    if abs(obs[0]) < abs(obs[1]):
+        return (obs[0] - pred[0]) * -pred[2] / pred[3] + pred[1] - obs[1]
+    else:
+        return (obs[1] - pred[1]) * -pred[3] / pred[2] + pred[0] - obs[0]
