@@ -27,6 +27,8 @@ def hess_f(x,*fargs):
 ##
 ######################################################################
 
+dir_colors=['#ea6949', '#51c373', '#a370ff', '#444444']
+
 
 def aligned_quaternion(v):
     ## The largest component
@@ -188,7 +190,6 @@ class Corisco():
         ## Plot the vanishing point directions at various pixels. ax
         ## is a matplotlib axes, taken with "gca()". Spacing the
         ## separation bweteen the points, and myR the rotation matrix.
-        dir_colors=['#ea6949', '#51c373', '#a370ff', '#444444']
         Iheight, Iwidth = (480, 640)
         spacing = 50
         qq = spacing*0.45*np.array([-1,+1])

@@ -16,6 +16,8 @@ setuptools.setup(
             "rtr_edgel_tracker = rectrckr.tools.rtr_edgel_tracker:main",
             "rtr_analyze_edgel_data = rectrckr.tools.rtr_analyze_edgel_data:main",
             "rtr_simulate_edgels = rectrckr.tools.rtr_simulate_edgels:main",
+            "rtr_estimate_pose = rectrckr.tools.rtr_estimate_pose:main",
+            "rtr_test_scene_model = rectrckr.tools.rtr_test_scene_model:main",
             "rtr_test_corisco = rectrckr.tools.rtr_test_corisco:main",
             "rtr_test_filter = rectrckr.tools.rtr_test_filter:main",
         ]
