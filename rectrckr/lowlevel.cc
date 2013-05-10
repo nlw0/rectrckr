@@ -199,12 +199,46 @@ void gradient(double* dx, double* dy, double* img, npy_int dimx, npy_int px, npy
   }  
 }
 
+static PyObject * p_wrapper(PyObject *self, PyObject *args) {
+  PyObject *input_img;
+  PyArrayObject *img_obj;
+  npy_int px, py;
+
+  if (!PyArg_ParseTuple(args, "Oii", &input_img, &px, &py))
+    return NULL;
+
+  img_obj = (PyArrayObject *)
+    PyArray_ContiguousFromObject(input_img, PyArray_DOUBLE, 2, 2);
+  if (img_obj == NULL) return NULL;
+
+  npy_int dimx = img_obj->dimensions[1];
+  npy_int dimy = img_obj->dimensions[0];
+  double *img = (double*)img_obj->data;
+
+  if ((px < 2) || (px > dimx-2) ||
+      (py < 2) || (py > dimy-2))
+    {
+      Py_DECREF(img_obj);
+      Py_RETURN_NONE;
+    }
+
+  double dx = 0, dy = 0;
+  
+  gradient(&dx, &dy, img, dimx, px, py);
+
+  Py_DECREF(img_obj);
+  return Py_BuildValue("dd", dx, dy);
+}
+
+
 static PyMethodDef LowLevelMethods[] =
   {
     {"find_edge", find_edge, METH_VARARGS,
      "Sweep an image line on the given direction, until the first edge is detected.\n"},
     {"linear_derivative", linear_derivative, METH_VARARGS,
      "Calculate the derivative on a line or column.\n"},
+    {"p_wrapper", p_wrapper, METH_VARARGS,
+     "yah yah.\n"},
     {"gradient", gradient_wrapper, METH_VARARGS,
      "Image gradient around a given point, using the Shigeru filter.\n"},
     {NULL, NULL, 0, NULL}

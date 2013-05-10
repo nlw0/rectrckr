@@ -2,10 +2,14 @@
 
 
 static inline double p(const Vector3D& s, const Vector3D& t, const Quaternion& psi, ) {
+  Vector3D qa = q(s, t, psi);
+  Vector2D pa = q(s, t, psi);
 
+  pa.x = qa.x/qa.z;
+  pa.y = qa.y/qa.z;
 
+  return pa;
 }
-
 
 static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
   Vector3D output;
