@@ -29,7 +29,7 @@ setuptools.setup(
     ext_modules=[
         distutils.extension.Extension(
             "rectrckr.lowlevel",
-            sources=["rectrckr/lowlevel.c"],
+            sources=["rectrckr/lowlevel.cc", "rectrckr/target.cc"],
         ),
 
         distutils.extension.Extension(
