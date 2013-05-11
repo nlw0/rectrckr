@@ -1,3 +1,6 @@
+#ifndef VECTORS_H
+#define VECTORS_H
+
 #include <math.h>
 
 inline double rsqrt(double x) { return 1.0 / sqrtf(x); };
@@ -185,3 +188,4 @@ struct Quaternion {
 inline Quaternion operator* (const double& alpha, const Quaternion& q) {
   return q * alpha;
 }
+#endif /* VECTORS_H */

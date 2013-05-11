@@ -1,15 +1,12 @@
 #include "vectors.h"
-#include "target.h"
 #include "camera_models.h"
+#include "target.h"
 
-static inline Vector2D p(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
-  Vector3D qa = q(s, t, psi);
-  Vector2D pa;
-
-  pa.x = qa.x/qa.z;
-  pa.y = qa.y/qa.z;
-
-  return pa;
+static inline Vector2D p(const Vector3D& s,
+                         const Vector3D& t,
+                         const Quaternion& psi,
+                         const CameraModel& cm) {
+  return project(q(s, t, psi), cm);
 }
 
 static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
@@ -88,7 +85,7 @@ static inline Vector3D dr_dpsi(Quaternion psi, int direction, int k) {
      (k==1) ?  psi.d :
      (k==2) ?  psi.a :
      (k==3) ?  psi.b : 0) : 0;
-  
+
   output.y = 
     (direction==0) ?
     ((k==0) ?  psi.d :
@@ -105,7 +102,7 @@ static inline Vector3D dr_dpsi(Quaternion psi, int direction, int k) {
      (k==1) ? -psi.a :
      (k==2) ?  psi.d :
      (k==3) ?  psi.c : 0) : 0;
-  
+
   output.z =
     (direction==0) ?
     ((k==0) ? -psi.c :

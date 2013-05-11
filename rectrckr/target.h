@@ -1,4 +1,5 @@
-
+#include "vectors.h"
+#include "camera_models.h"
 
 static inline Vector2D p(const Vector3D& s, const Vector3D& t, const Quaternion& psi);
 static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion& psi);

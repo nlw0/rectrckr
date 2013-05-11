@@ -3,6 +3,8 @@
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 
+#include "camera_models.h"
+
 double dev(double * p, npy_int step) {
   return (-0.212 * p[-2*step] - 0.5 * p[-1*step] + 0.5 * p[1*step] + 0.212 * p[2*step]);
 }
@@ -200,34 +202,25 @@ void gradient(double* dx, double* dy, double* img, npy_int dimx, npy_int px, npy
 }
 
 static PyObject * p_wrapper(PyObject *self, PyObject *args) {
-  PyObject *input_img;
-  PyArrayObject *img_obj;
-  npy_int px, py;
+  PyArrayObject *s_obj;
+  PyArrayObject *t_obj;
+  PyArrayObject *psi_obj;
+  PyArrayObject *cm_obj;
 
-  if (!PyArg_ParseTuple(args, "Oii", &input_img, &px, &py))
+  if (!PyArg_ParseTuple(args, "O!O!O!O!",
+                        &PyArray_Type, &s_obj,
+                        &PyArray_Type,  &t_obj,
+                        &PyArray_Type, &psi_obj,
+                        &PyArray_Type, &cm_obj))
     return NULL;
 
-  img_obj = (PyArrayObject *)
-    PyArray_ContiguousFromObject(input_img, PyArray_DOUBLE, 2, 2);
-  if (img_obj == NULL) return NULL;
+  // double *s = (double*)s_obj->data;
+  // double *t = (double*)t_obj->data;
+  // double *psi = (double*)psi_obj->data;
+  double *cm = (double*)cm_obj->data;
 
-  npy_int dimx = img_obj->dimensions[1];
-  npy_int dimy = img_obj->dimensions[0];
-  double *img = (double*)img_obj->data;
-
-  if ((px < 2) || (px > dimx-2) ||
-      (py < 2) || (py > dimy-2))
-    {
-      Py_DECREF(img_obj);
-      Py_RETURN_NONE;
-    }
-
-  double dx = 0, dy = 0;
-  
-  gradient(&dx, &dy, img, dimx, px, py);
-
-  Py_DECREF(img_obj);
-  return Py_BuildValue("dd", dx, dy);
+  return Py_BuildValue("dddd", cm[0], cm[1], cm[2], cm[3]);
+  //return Py_BuildValue("dd", dx, dy);
 }
 
 

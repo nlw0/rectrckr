@@ -18,6 +18,7 @@ setuptools.setup(
             "rtr_simulate_edgels = rectrckr.tools.rtr_simulate_edgels:main",
             "rtr_estimate_pose = rectrckr.tools.rtr_estimate_pose:main",
             "rtr_test_scene_model = rectrckr.tools.rtr_test_scene_model:main",
+            "rtr_test_camera_model = rectrckr.tools.rtr_test_camera_model:main",
             "rtr_test_corisco = rectrckr.tools.rtr_test_corisco:main",
             "rtr_test_filter = rectrckr.tools.rtr_test_filter:main",
         ]
@@ -29,7 +30,7 @@ setuptools.setup(
     ext_modules=[
         distutils.extension.Extension(
             "rectrckr.lowlevel",
-            sources=["rectrckr/lowlevel.cc", "rectrckr/target.cc"],
+            sources=["rectrckr/lowlevel.cc", "rectrckr/target.cc", "rectrckr/camera_models.cc"],
         ),
 
         distutils.extension.Extension(
