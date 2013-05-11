@@ -1,9 +1,10 @@
 #include "vectors.h"
+#include "target.h"
+#include "camera_models.h"
 
-
-static inline double p(const Vector3D& s, const Vector3D& t, const Quaternion& psi, ) {
+static inline Vector2D p(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
   Vector3D qa = q(s, t, psi);
-  Vector2D pa = q(s, t, psi);
+  Vector2D pa;
 
   pa.x = qa.x/qa.z;
   pa.y = qa.y/qa.z;
@@ -21,7 +22,7 @@ static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion&
   return Vector3D(d * rx, d * ry, d * rz);
 }
 
-static inline Vector3D dq_s(const Quaternion& psi, const int& k) {
+static inline Vector3D dq_ds(const Quaternion& psi, const int& k) {
   Vector3D output;
   Vector3D rx = r(psi, 0);
   Vector3D ry = r(psi, 1);
@@ -38,7 +39,7 @@ static inline Vector3D dq_s(const Quaternion& psi, const int& k) {
   }
 }
 
-static inline Vector3D dq_t(const Quaternion& psi, const int& k) {
+static inline Vector3D dq_dt(const Quaternion& psi, const int& k) {
   return -1.0 * dq_ds(psi, k);
 }
 
@@ -70,7 +71,7 @@ static inline Vector3D r(Quaternion psi, int direction) {
 /* Derivative of each vector component relative to the quaternion
    component k. */
 static inline Vector3D dr_dpsi(Quaternion psi, int direction, int k) {
-  Point3d output;
+  Vector3D output;
   output.x =
     (direction==0) ?
     ((k==0) ?  psi.a :
