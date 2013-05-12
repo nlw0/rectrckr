@@ -15,6 +15,9 @@ struct Vector2D {
   Vector2D(double x_, double y_)
     : x(x_), y(y_) {}
 
+  Vector2D(double *p)
+    : x(p[0]), y(p[1]) {}
+
   inline Vector2D& operator= (const Vector2D& b) {
     x = b.x;
     y = b.y;
@@ -75,6 +78,9 @@ struct Vector3D {
 
   Vector3D(double x_, double y_, double z_)
     : x(x_), y(y_), z(z_) {}
+
+  Vector3D(double* p)
+    : x(p[0]), y(p[1]), z(p[2]) {}
 
   inline double operator[] (long k) {
     return (*this)[k];
@@ -142,6 +148,9 @@ struct Quaternion {
   
   Quaternion(double a_, double b_, double c_, double d_)
     : a(a_), b(b_), c(c_), d(d_) {}
+  
+  Quaternion(double* p)
+    : a(p[0]), b(p[1]), c(p[2]), d(p[3]) {}
   
   inline double operator[] (long k) {
     return (*this)[k];

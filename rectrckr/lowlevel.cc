@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "camera_models.h"
+#include "target.h"
 
 double dev(double * p, npy_int step) {
   return (-0.212 * p[-2*step] - 0.5 * p[-1*step] + 0.5 * p[1*step] + 0.212 * p[2*step]);
@@ -209,18 +210,22 @@ static PyObject * p_wrapper(PyObject *self, PyObject *args) {
 
   if (!PyArg_ParseTuple(args, "O!O!O!O!",
                         &PyArray_Type, &s_obj,
-                        &PyArray_Type,  &t_obj,
+                        &PyArray_Type, &t_obj,
                         &PyArray_Type, &psi_obj,
                         &PyArray_Type, &cm_obj))
     return NULL;
 
-  // double *s = (double*)s_obj->data;
-  // double *t = (double*)t_obj->data;
-  // double *psi = (double*)psi_obj->data;
-  double *cm = (double*)cm_obj->data;
-
-  return Py_BuildValue("dddd", cm[0], cm[1], cm[2], cm[3]);
-  //return Py_BuildValue("dd", dx, dy);
+  double *s = (double*)s_obj->data;
+  double *t = (double*)t_obj->data;
+  double *psi = (double*)psi_obj->data;
+  CameraModel cm = *((CameraModel*)cm_obj->data);
+  
+  Vector2D pp = project(q(s, t, psi), cm);
+  
+  return Py_BuildValue("dd", pp.x, pp.y);
+  
+  // double *cm = (double*)cm_obj->data;
+  // return Py_BuildValue("iddd", cm[0], cm[1], cm[2], cm[3]);
 }
 
 

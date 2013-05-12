@@ -18,15 +18,15 @@ struct CameraModel {
 };
 
 /* Forward projections */
-static inline Vector2D project_perspective(const Vector3D& q, const CameraModel& cam);
-static inline Vector2D project_harris(const Vector3D& q, const CameraModel& cam);
-static inline Vector2D project_equidistant(const Vector3D& q, const CameraModel& cam);
-static inline Vector2D project_equirectangular(const Vector3D& q, const CameraModel& cam);
+Vector2D project_perspective(const Vector3D& q, const CameraModel& cam);
+Vector2D project_harris(const Vector3D& q, const CameraModel& cam);
+Vector2D project_equidistant(const Vector3D& q, const CameraModel& cam);
+Vector2D project_equirectangular(const Vector3D& q, const CameraModel& cam);
 /* Inverse projections */
-static inline Vector3D invproject_perspective(const Vector2D& p, const CameraModel& cam);
-static inline Vector3D invproject_harris(const Vector2D& p, const CameraModel& cam);
-static inline Vector3D invproject_equidistant(const Vector3D& p, const CameraModel& cam);
-static inline Vector3D invproject_equirectangular(const Vector2D& p, const CameraModel& cam);
+Vector3D invproject_perspective(const Vector2D& p, const CameraModel& cam);
+Vector3D invproject_harris(const Vector2D& p, const CameraModel& cam);
+Vector3D invproject_equidistant(const Vector3D& p, const CameraModel& cam);
+Vector3D invproject_equirectangular(const Vector2D& p, const CameraModel& cam);
 
 Vector2D project(const Vector3D& q, const CameraModel& cam);
 Vector2D invproject(const Vector3D& q, const CameraModel& cam);

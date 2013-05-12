@@ -2,14 +2,14 @@
 #include "camera_models.h"
 #include "target.h"
 
-static inline Vector2D p(const Vector3D& s,
+Vector2D p(const Vector3D& s,
                          const Vector3D& t,
                          const Quaternion& psi,
                          const CameraModel& cm) {
   return project(q(s, t, psi), cm);
 }
 
-static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
+Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion& psi) {
   Vector3D output;
   Vector3D rx = r(psi, 0);
   Vector3D ry = r(psi, 1);
@@ -19,7 +19,7 @@ static inline Vector3D q(const Vector3D& s, const Vector3D& t, const Quaternion&
   return Vector3D(d * rx, d * ry, d * rz);
 }
 
-static inline Vector3D dq_ds(const Quaternion& psi, const int& k) {
+Vector3D dq_ds(const Quaternion& psi, const int& k) {
   Vector3D output;
   Vector3D rx = r(psi, 0);
   Vector3D ry = r(psi, 1);
@@ -36,11 +36,11 @@ static inline Vector3D dq_ds(const Quaternion& psi, const int& k) {
   }
 }
 
-static inline Vector3D dq_dt(const Quaternion& psi, const int& k) {
+Vector3D dq_dt(const Quaternion& psi, const int& k) {
   return -1.0 * dq_ds(psi, k);
 }
 
-static inline Vector3D dq_dpsi(const Vector3D& s, const Vector3D& t, const Quaternion& psi, const int& k) {
+Vector3D dq_dpsi(const Vector3D& s, const Vector3D& t, const Quaternion& psi, const int& k) {
   Vector3D output;
   Vector3D rx_ = dr_dpsi(psi, 0, k);
   Vector3D ry_ = dr_dpsi(psi, 1, k);
@@ -51,7 +51,7 @@ static inline Vector3D dq_dpsi(const Vector3D& s, const Vector3D& t, const Quate
 }
 
 /* Reference frame vector at the specified direction. */
-static inline Vector3D r(Quaternion psi, int direction) {
+Vector3D r(Quaternion psi, int direction) {
   return Vector3D( \
     (direction==0) ? (psi.a*psi.a+psi.b*psi.b-psi.c*psi.c-psi.d*psi.d) :
     (direction==1) ? (2*psi.b*psi.c-2*psi.a*psi.d) :
@@ -67,7 +67,7 @@ static inline Vector3D r(Quaternion psi, int direction) {
 
 /* Derivative of each vector component relative to the quaternion
    component k. */
-static inline Vector3D dr_dpsi(Quaternion psi, int direction, int k) {
+Vector3D dr_dpsi(Quaternion psi, int direction, int k) {
   Vector3D output;
   output.x =
     (direction==0) ?
