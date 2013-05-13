@@ -220,6 +220,8 @@ static PyObject * p_wrapper(PyObject *self, PyObject *args) {
   double *psi = (double*)psi_obj->data;
   CameraModel cm = *((CameraModel*)cm_obj->data);
   
+  // Vector2D pp = project(q(s, t, psi), cm);
+
   Vector2D pp = project(q(s, t, psi), cm);
   
   return Py_BuildValue("dd", pp.x, pp.y);
