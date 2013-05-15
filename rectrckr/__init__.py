@@ -7,6 +7,7 @@ import rectrckr.lowlevel as lowlevel
 from corisco.quaternion import Quat
 from corisco import dir_colors
 
+
 class DataSource:
     def __init__(self, meta_fp):
         self.path = os.path.dirname(meta_fp.name)
@@ -148,10 +149,6 @@ class Camera:
                 (edgels[:,[1,1]] + scale*numpy.c_[-edgels[:,2], edgels[:,2]]).T,
                 '-',lw=3.0,alpha=1.0,color='#ff0000')
 
-        
-
-
-
 
 class SceneModel:
     def __init__(self, model):
@@ -180,3 +177,12 @@ class SceneModel:
                     [ 1.4142,-1, 0], [ 1.4142, 1, 0], ])
         else:
             raise Exception('Invalid model')
+
+
+
+def target(ss, t, psi, cam, p):
+
+    p_hat = numpy.array([lowlevel.p_wrapper(s, t, psi, cam) for s in ss])
+
+    
+
