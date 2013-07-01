@@ -21,6 +21,7 @@ setuptools.setup(
             "rtr_test_camera_model = rectrckr.tools.rtr_test_camera_model:main",
             "rtr_test_corisco = rectrckr.tools.rtr_test_corisco:main",
             "rtr_test_filter = rectrckr.tools.rtr_test_filter:main",
+            "rtr_test_bisection = rectrckr.tools.rtr_test_bisection:main",
         ]
     },
     install_requires=[
@@ -39,6 +40,11 @@ setuptools.setup(
                      "rectrckr/corisco/corisco_aux_external.c"],
 
             extra_compile_args=['-msse2', '-mfpmath=sse'],
+        ),
+
+        distutils.extension.Extension(
+            "rectrckr.filter_sqp.trust_bisection",
+            sources=["rectrckr/filter_sqp/trust_bisection_module.c"],
         ),
     ],
     include_dirs=[numpy.get_include()],
