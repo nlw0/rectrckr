@@ -15,26 +15,32 @@ def main():
 
     args = parser.parse_args()
 
-    print 'α:', args.alpha
-    print 'λ:', args.lam
-
     alpha = args.alpha
     lam = array(args.lam)
     rho = args.rho
 
-    min_lam = max(0,min(lam))
+    print 'α:', alpha
+    print 'λ:', lam
+    print 'ρ:', rho
+
+    nu = find_step_size(alpha, lam, rho, 1e-5)
+    print 'nu=', nu
+    print "f(nu)-rho=", calculate_distance(alpha, lam, nu) - rho
+
     rez=0.01
-    xx = mgrid[min_lam+rez:10.0:rez]
+
+    xx = mgrid[nu/100.0:nu*100:rez]
     yy = array([calculate_distance(alpha, lam, x) for x in xx])
-
-
-
-
 
     ion()
     loglog(xx, yy)
-    loglog(xx[[0,-1]], [rho, rho], 'r-')
+    #loglog(xx[[1,-2]], [rho, rho], 'r-')
+
+    loglog([nu/10.0, nu*10.0], [rho, rho], 'r-')
+    loglog(nu, calculate_distance(alpha, lam, nu), 'rd')
 
     grid()
 
     code.interact()
+
+

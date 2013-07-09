@@ -44,7 +44,7 @@ setuptools.setup(
 
         distutils.extension.Extension(
             "rectrckr.filter_sqp.trust_bisection",
-            sources=["rectrckr/filter_sqp/trust_bisection_module.c"],
+            sources=["rectrckr/filter_sqp/trust_bisection_module.cc"],
         ),
     ],
     include_dirs=[numpy.get_include()],
